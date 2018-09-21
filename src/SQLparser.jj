@@ -1,0 +1,589 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{  static = true;
+  IGNORE_CASE = true;}PARSER_BEGIN(SQLparser)import java.io.*;
+public class SQLparser{
+
+  public static Table initTable(String filepath) {
+    
+    Table table = null;
+	try {
+	    BufferedReader in = new BufferedReader(new FileReader(filepath));
+     	String s;
+
+		// read name  type from the first line
+		s = in.readLine();
+		
+		String[] parse = s.split(" ");
+		String[] p_name = new String[parse.length];
+		String[] p_type = new String[parse.length];
+		
+		for (int i=0; i<parse.length; i++) {
+			String[] temp = parse[i].split("\\(|\\)");
+			p_name[i] = temp[0];
+			p_type[i] = temp[1];
+		}
+
+		// initiate table with the given name  type arrays
+		table = new Table(p_name, p_type);
+
+		// read line by line  insert new entry
+		while ((s = in.readLine()) != null) {
+        	String[] temp = s.split(" ");
+        	table.insert(temp);
+      	}
+      	
+      	in.close();
+      	
+	} catch (IOException e) {
+        System.err.println(e);
+    }
+    
+    return table;
+  }
+    public static void main(String args []) throws ParseException  {    SQLparser parser = new SQLparser(System.in);
+
+	// initialize table R, S, B
+	Table R = initTable("src/R.txt");
+    Table S = initTable("src/S.txt");
+    Table B = initTable("src/B.txt");
+
+	TableList tables = new TableList();
+	tables.insert(R, "R");
+	tables.insert(S, "S");
+	tables.insert(B, "B");
+
+	
+
+	/*
+	//Testing table.print function and table list class
+
+	Table temp;
+	
+	String[] stemp = { "temp", "R", "S", "B", "N" };
+	for (int i = 0; i<stemp.length; i++) {
+	  temp = tables.search(stemp[i]);
+	  if(temp == null) {
+	    System.out.println("No Table with name "+stemp[i]);
+	    System.out.println("");
+	  }
+	  else {
+	    System.out.println("Table with name "+stemp[i]);
+	    temp.print();
+	  }
+	}
+	*/
+
+	/*
+	//testing table copy constructor
+	
+	Table R_copy = new Table(R);
+	System.out.println("TESTING COPY...");
+	R_copy.head.next.getData()[0] = "1000";
+	String[] st = { "100", "300", "10/20/30" };
+	R.insert( st);
+	R.print();
+	R_copy.print();
+	*/
+        while (true)    {      System.out.println("Reading from stard input...");      try      {        switch (SQLparser.one_line())        {          case 0 :           System.out.println("OK.");          break;          case 1 :           System.out.println("Goodbye.");          break;          default :           break;        }      }      catch (Exception e)      {        System.out.println("NOK.");        System.out.println(e.getMessage());        SQLparser.ReInit(System.in);      }      catch (Error e)      {        System.out.println("Oops.");        System.out.println(e.getMessage());        break;      }    }  }}
+
+//////////////////////////////////////////////////////////////////////////////////////
+///////////////////////// TABLE : STORES DB TABLE DATA ///////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+class TableEntry {
+	String[] data;
+
+	TableEntry(String[] d) {
+	  data = d;
+	}
+
+	void print() {
+	  if(data==null) return;
+	  for (int i=0; i<data.length; i++)
+	  	System.out.print(data[i]+"\t\t");
+	 
+	 System.out.println("");
+  }
+}
+
+class TableEntryNode {
+	TableEntry entry;
+	TableEntryNode prev;
+	TableEntryNode next;
+
+	TableEntryNode() {
+	  	entry = null;
+		prev = null;
+		next = null;
+	}
+	
+	TableEntryNode(String[] d) {
+	  	entry = new TableEntry(d);
+		prev = null;
+		next = null;
+	}
+
+	String[] getData() {
+		return entry.data;
+	}
+	void print() {
+	  entry.print();
+	}
+
+}
+
+// name array, type array
+// plus list of table entry arrays
+class Table {
+  	int n_col;
+  	int n_row;
+  	
+	TableEntryNode name;
+	TableEntryNode type;
+	TableEntryNode head;
+	TableEntryNode tail;
+
+	Table(String[] na, String[] ty) {
+	  //init name  type
+	  name = new TableEntryNode(na);
+	  type = new TableEntryNode(ty);
+
+	  //init head  tail
+	  head = new TableEntryNode();
+	  tail = new TableEntryNode();
+	  head.next = tail;
+	  tail.prev = head;
+
+	  //init num cols  rows
+	  n_col = na.length;
+	  n_row = 0;
+	}
+
+	Table(Table t) {
+	  copy(t);
+	}
+
+	void insert(String[] d) {
+	  TableEntryNode temp = new TableEntryNode(d);
+
+	  //insert at the tail
+	  temp.next = tail;
+	  temp.prev = tail.prev;
+	  tail.prev.next = temp;
+	  tail.prev = temp;
+	  n_row ++;
+	  
+	}
+
+	void print() {
+	  name.print();
+	  type.print();
+	  TableEntryNode temp = head.next;
+	  while(true) {
+	    if(temp.next == null) {
+	      //System.out.println(""+n_row);
+	 	  //System.out.println("");
+	 	  return;
+	 	}
+	    temp.print();
+	    temp = temp.next;
+	  }
+	}
+
+	void copy(Table t) {
+	  n_col = t.n_col;
+	  n_row = t.n_row;
+	  
+	  head = new TableEntryNode();
+	  tail = new TableEntryNode();
+	  head.next = tail;
+	  tail.prev = head;
+	  
+	  name = new TableEntryNode(new String[n_col]);
+	  type = new TableEntryNode(new String[n_col]);
+	  System.arraycopy(t.name.getData(), 0, name.getData(), 0, n_col);
+	  System.arraycopy(t.type.getData(), 0, type.getData(), 0, n_col);
+
+	  TableEntryNode temp = t.head.next;
+	  while(true) { 
+	  	if(temp.next == null) return;
+	    String[] stemp = new String[n_col];
+	  	System.arraycopy(temp.entry.data, 0, stemp, 0, n_col);
+	  	insert(stemp);
+	  	temp = temp.next;
+	 }
+  }
+	  	
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////// TABLE LIST : ORGANIZES TABLES (w/ NAMES) ////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+class TableNode {
+  Table table;
+  String name;
+  TableNode prev;
+  TableNode next;
+
+  TableNode() {
+    prev = null;
+    next = null;
+    table = null;
+    name = "";
+  }
+  
+  TableNode(Table t, String n) {
+	prev = null;
+	next = null;
+	table = t;
+	name = n;
+  }
+  
+  
+}
+class TableList {
+  TableNode head;
+  TableNode tail;
+
+  TableList() {
+	head = new TableNode();
+	tail = new TableNode();
+	head.next = tail;
+	tail.prev = head;
+  }
+
+  void insert(Table t, String name) {
+	  TableNode temp = new TableNode(t, name);
+
+	  //insert at the tail
+	  temp.next = tail;
+	  temp.prev = tail.prev;
+	  tail.prev.next = temp;
+	  tail.prev = temp;
+	  
+	}
+
+  Table search(String name) {
+	  TableNode temp = head.next;
+	  while(true) {
+	    if(temp.next == null) return null; // reach at the tail, then no corresponding table 
+	    if(name.equals(temp.name)) return temp.table;
+	    temp = temp.next; // progress one step
+	}
+  }
+  
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+///////////////////// NODE LIST :  STORES COMMENT PARSING RESULT /////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+/* Node_data stores 'table.attr' or 'table.attr op value' */
+class NodeData {
+  String table_name;
+  String attr_name;
+  char operation; /* =, <, > only */
+  float value;
+
+  public NodeData() {
+  }
+
+  public NodeData(String tn, String an, char op, float val) {
+    table_name = tn;
+    attr_name = an;
+    operation = op;
+    value = val;
+  }
+  
+}
+
+/* Node element for Node List */
+/* It encapsulates the Node Data */
+class Node {
+  NodeData node;
+  Node prev;
+  Node next;
+
+  public Node() {
+	node = new NodeData();
+	prev = null;
+	next = null;
+  }
+
+  public Node(NodeData nd) {
+    node = nd;
+    prev = null;
+    next = null;
+  }
+  
+  public Node(NodeData nd, Node p, Node n) {
+    node = nd;
+    prev = p;
+    next = n;
+  }
+}
+
+/* Node List stores multiple node_data in  a list */
+class NodeList {
+	Node head;
+	Node tail;
+	
+	public NodeList() {
+	  head = new Node();
+	  tail = new Node();
+	  head.next = tail;
+	  tail.prev = head;
+	}
+	
+	public void insert(NodeData nd) { 
+	  Node n_temp = new Node(nd);
+	  n_temp.prev = tail.prev;
+	  n_temp.next = tail;
+	  tail.prev.next = n_temp;
+	  tail.prev = n_temp;
+	}
+
+	public void print() {
+		System.out.print("Print Node List : ");
+		Node temp = head.next;
+		while(temp.next != null) {
+		    NodeData nd = temp.node;
+			System.out.print("("+ nd.table_name + ","+ nd.attr_name + "," + nd.operation + "," + Float.toString(nd.value)+ ") ");
+			temp = temp.next;
+		}
+		System.out.println("");
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
+PARSER_END(SQLparser)SKIP :{  " "| "\r"| "\t"
+| "\n"}
+TOKEN:
+{
+  < AND : "AND" > 
+}
+
+TOKEN : /* Statements */
+{
+  < SELECT : "select" >
+| < FROM : "from" >
+| < WHERE : "where" >
+}
+
+TOKEN:
+{
+  < ID : ( ["A"-"Z"]|["a"-"z"])(["0"-"9"]| ["A"-"Z"]|["a"-"z"])* > /* ID of table or attribute*/
+| < OP : "="|"<"|">" >
+| < VALUE : ((["0"-"9"])+)(("."["0"-"9"])?) >  /*float number */
+}
+
+
+
+int one_line():
+{
+  NodeList select_list;
+  NodeList from_list;
+  NodeList where_list;
+  int output;
+  Token value;
+  float f;
+}
+{
+  // Select Comm
+  (
+    < SELECT > select_list=select() {
+      
+      /*For debugging*/
+      System.out.println("Select!");
+	  if(select_list == null) {
+	    System.out.println("*");
+	  }
+	  else {
+	    System.out.print("Select List : ");
+	    select_list.print();
+	  }
+    }
+  )
+
+  //From Comm
+  (    < FROM > from_list=from() {
+      
+	  /*For debugging*/
+      System.out.println("From!");
+	  System.out.print("From List : ");
+	  from_list.print();
+	  
+    }
+  )
+  
+  //Where Comm
+  (
+    < WHERE > where_list=where() {
+      
+      /*For debugging*/
+      System.out.println("Where!");
+	  System.out.print("Where List : ");
+	  where_list.print();
+	  
+    }
+  )? // one or zero where statement possible
+  //End with SemiColon
+  ";"
+  {
+    //Function to interpret the comm
+    //by select, from, where list
+    
+	/* ***************TODO***************** */
+
+    return 0;
+  }
+
+// end statement
+| ";"
+  {
+    return 1;
+  }
+}
+
+
+/* select comm : * or table.attr1, ..., table.attrn */
+NodeList select():
+{
+  NodeList output = null; /* if *, then output is null */
+                          /* otherwise, it is a list of "table.attr" */
+  NodeData nd;
+}
+{
+  "*"
+  {
+    return output; // if *, just return null value
+  }
+| (
+    nd=attr()
+    {
+	  output = new NodeList();
+	  output.insert(nd);
+    }
+  )
+  (	"," nd=attr()
+	{
+	  output.insert(nd);
+	}
+  )*
+  {
+    return output;
+  }
+
+}
+
+/* from comm : table1, ..., tablen */
+NodeList from():
+{
+  NodeList output = null;
+  NodeData nd;
+}
+{
+  (
+    nd=table()
+    {
+	  output = new NodeList();
+	  output.insert(nd);
+    }
+  )
+  (
+	"," nd=table()
+	{
+	  output.insert(nd);
+	}
+  )*
+  {
+    return output;
+  }
+}
+
+/* where comm : t.attr op val 1, ..., t.attr op val n*/
+NodeList where():
+{
+  NodeList output = null;
+  NodeData nd;
+}
+{
+  (
+    nd=operation()
+    {
+	  output = new NodeList();
+	  output.insert(nd);
+    }
+  )
+  (
+	< AND > nd=operation()
+	{
+	  output.insert(nd);
+	}
+  )*
+  {
+    return output;
+  }
+}
+
+/* Table : "table" */
+NodeData table():
+{
+  NodeData output;
+  Token table;
+}
+{
+  table=< ID > {
+    output = new NodeData();
+    output.table_name = table.toString();
+    return output;
+  }
+}
+
+
+/* attribute : "table.attr" */
+NodeData attr():
+{
+  NodeData output;
+  Token table;
+  Token attr;
+}
+{
+  table=< ID >"."attr=< ID > {
+    output = new NodeData();
+    output.table_name = table.toString();
+    output.attr_name = attr.toString();
+    return output;
+  }
+}
+
+
+/* operation : "table.attr op value" */
+NodeData operation():
+{
+  NodeData output;
+  Token table;
+  Token attr;
+  Token operation;
+  Token value;
+}
+{
+  table=< ID >"."attr=< ID > operation=< OP > value=< VALUE >{
+    output = new NodeData();
+    output.table_name = table.toString();
+    output.attr_name = attr.toString();
+    output.operation = (operation.toString()).charAt(0);
+    output.value = Float.parseFloat(value.toString());
+    return output;
+  }
+}
+
+  
