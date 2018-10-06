@@ -1,371 +1,83 @@
 /**
  * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
- */options{  static = true;
-  IGNORE_CASE = true;}PARSER_BEGIN(SQLparser)import java.io.*;
-public class SQLparser{
+ */
+options
+{
+  static = true;
+  IGNORE_CASE = true;
+}
 
-  public static Table initTable(String filepath) {
-    
-    Table table = null;
-	try {
-	    BufferedReader in = new BufferedReader(new FileReader(filepath));
-     	String s;
+PARSER_BEGIN(SQLparser)
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
-		// read name  type from the first line
-		s = in.readLine();
-		
-		String[] parse = s.split(" ");
-		String[] p_name = new String[parse.length];
-		String[] p_type = new String[parse.length];
-		
-		for (int i=0; i<parse.length; i++) {
-			String[] temp = parse[i].split("\\(|\\)");
-			p_name[i] = temp[0];
-			p_type[i] = temp[1];
-		}
 
-		// initiate table with the given name  type arrays
-		table = new Table(p_name, p_type);
+public class SQLparser
+{
 
-		// read line by line  insert new entry
-		while ((s = in.readLine()) != null) {
-        	String[] temp = s.split(" ");
-        	table.insert(temp);
-      	}
-      	
-      	in.close();
-      	
-	} catch (IOException e) {
-        System.err.println(e);
+  public static void main(String args []) throws ParseException
+  {
+    SQLparser parser = new SQLparser(System.in);
+
+	
+    while (true)
+    {
+      System.out.println("Reading from stard input...");
+      try
+      {
+        switch (SQLparser.one_line())
+        {
+          case -1 :
+          System.out.println("NOK: Not a valid query.\n");
+          break;
+          case 0 : 
+          System.out.println("OK.\n");
+          break;
+          case 1 : 
+          System.out.println("Goodbye.\n");
+          
+          /* external sort mode change */
+		  case 2:
+		  System.out.println("External sort mode changed.\n");
+          break;
+          case 3: // wrong mode selection input
+          System.out.println("NOK: Not a valid input for mode selection.\n");
+          
+          default : 
+          break;
+        }
+      }
+      catch (Exception e)
+      {
+        System.out.println("NOK.");
+        System.out.println(e.getMessage());
+        SQLparser.ReInit(System.in);
+        System.out.println();
+      }
+      catch (Error e)
+      {
+        System.out.println("Oops.");
+        System.out.println(e.getMessage());
+        System.out.println();
+        break;
+      }
     }
-    
-    return table;
-  }
-    public static void main(String args []) throws ParseException  {    SQLparser parser = new SQLparser(System.in);
-
-	// initialize table R, S, B
-	Table R = initTable("src/R.txt");
-    Table S = initTable("src/S.txt");
-    Table B = initTable("src/B.txt");
-
-	TableList tables = new TableList();
-	tables.insert(R, "R");
-	tables.insert(S, "S");
-	tables.insert(B, "B");
-
-	
-
-	/*
-	//Testing table.print function and table list class
-
-	Table temp;
-	
-	String[] stemp = { "temp", "R", "S", "B", "N" };
-	for (int i = 0; i<stemp.length; i++) {
-	  temp = tables.search(stemp[i]);
-	  if(temp == null) {
-	    System.out.println("No Table with name "+stemp[i]);
-	    System.out.println("");
-	  }
-	  else {
-	    System.out.println("Table with name "+stemp[i]);
-	    temp.print();
-	  }
-	}
-	*/
-
-	/*
-	//testing table copy constructor
-	
-	Table R_copy = new Table(R);
-	System.out.println("TESTING COPY...");
-	R_copy.head.next.getData()[0] = "1000";
-	String[] st = { "100", "300", "10/20/30" };
-	R.insert( st);
-	R.print();
-	R_copy.print();
-	*/
-        while (true)    {      System.out.println("Reading from stard input...");      try      {        switch (SQLparser.one_line())        {          case 0 :           System.out.println("OK.");          break;          case 1 :           System.out.println("Goodbye.");          break;          default :           break;        }      }      catch (Exception e)      {        System.out.println("NOK.");        System.out.println(e.getMessage());        SQLparser.ReInit(System.in);      }      catch (Error e)      {        System.out.println("Oops.");        System.out.println(e.getMessage());        break;      }    }  }}
-
-//////////////////////////////////////////////////////////////////////////////////////
-///////////////////////// TABLE : STORES DB TABLE DATA ///////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-
-class TableEntry {
-	String[] data;
-
-	TableEntry(String[] d) {
-	  data = d;
-	}
-
-	void print() {
-	  if(data==null) return;
-	  for (int i=0; i<data.length; i++)
-	  	System.out.print(data[i]+"\t\t");
-	 
-	 System.out.println("");
   }
 }
 
-class TableEntryNode {
-	TableEntry entry;
-	TableEntryNode prev;
-	TableEntryNode next;
 
-	TableEntryNode() {
-	  	entry = null;
-		prev = null;
-		next = null;
-	}
-	
-	TableEntryNode(String[] d) {
-	  	entry = new TableEntry(d);
-		prev = null;
-		next = null;
-	}
 
-	String[] getData() {
-		return entry.data;
-	}
-	void print() {
-	  entry.print();
-	}
+PARSER_END(SQLparser)
 
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
 }
 
-// name array, type array
-// plus list of table entry arrays
-class Table {
-  	int n_col;
-  	int n_row;
-  	
-	TableEntryNode name;
-	TableEntryNode type;
-	TableEntryNode head;
-	TableEntryNode tail;
-
-	Table(String[] na, String[] ty) {
-	  //init name  type
-	  name = new TableEntryNode(na);
-	  type = new TableEntryNode(ty);
-
-	  //init head  tail
-	  head = new TableEntryNode();
-	  tail = new TableEntryNode();
-	  head.next = tail;
-	  tail.prev = head;
-
-	  //init num cols  rows
-	  n_col = na.length;
-	  n_row = 0;
-	}
-
-	Table(Table t) {
-	  copy(t);
-	}
-
-	void insert(String[] d) {
-	  TableEntryNode temp = new TableEntryNode(d);
-
-	  //insert at the tail
-	  temp.next = tail;
-	  temp.prev = tail.prev;
-	  tail.prev.next = temp;
-	  tail.prev = temp;
-	  n_row ++;
-	  
-	}
-
-	void print() {
-	  name.print();
-	  type.print();
-	  TableEntryNode temp = head.next;
-	  while(true) {
-	    if(temp.next == null) {
-	      //System.out.println(""+n_row);
-	 	  //System.out.println("");
-	 	  return;
-	 	}
-	    temp.print();
-	    temp = temp.next;
-	  }
-	}
-
-	void copy(Table t) {
-	  n_col = t.n_col;
-	  n_row = t.n_row;
-	  
-	  head = new TableEntryNode();
-	  tail = new TableEntryNode();
-	  head.next = tail;
-	  tail.prev = head;
-	  
-	  name = new TableEntryNode(new String[n_col]);
-	  type = new TableEntryNode(new String[n_col]);
-	  System.arraycopy(t.name.getData(), 0, name.getData(), 0, n_col);
-	  System.arraycopy(t.type.getData(), 0, type.getData(), 0, n_col);
-
-	  TableEntryNode temp = t.head.next;
-	  while(true) { 
-	  	if(temp.next == null) return;
-	    String[] stemp = new String[n_col];
-	  	System.arraycopy(temp.entry.data, 0, stemp, 0, n_col);
-	  	insert(stemp);
-	  	temp = temp.next;
-	 }
-  }
-	  	
-}
-
-
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////// TABLE LIST : ORGANIZES TABLES (w/ NAMES) ////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-
-class TableNode {
-  Table table;
-  String name;
-  TableNode prev;
-  TableNode next;
-
-  TableNode() {
-    prev = null;
-    next = null;
-    table = null;
-    name = "";
-  }
-  
-  TableNode(Table t, String n) {
-	prev = null;
-	next = null;
-	table = t;
-	name = n;
-  }
-  
-  
-}
-class TableList {
-  TableNode head;
-  TableNode tail;
-
-  TableList() {
-	head = new TableNode();
-	tail = new TableNode();
-	head.next = tail;
-	tail.prev = head;
-  }
-
-  void insert(Table t, String name) {
-	  TableNode temp = new TableNode(t, name);
-
-	  //insert at the tail
-	  temp.next = tail;
-	  temp.prev = tail.prev;
-	  tail.prev.next = temp;
-	  tail.prev = temp;
-	  
-	}
-
-  Table search(String name) {
-	  TableNode temp = head.next;
-	  while(true) {
-	    if(temp.next == null) return null; // reach at the tail, then no corresponding table 
-	    if(name.equals(temp.name)) return temp.table;
-	    temp = temp.next; // progress one step
-	}
-  }
-  
-}
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////
-///////////////////// NODE LIST :  STORES COMMENT PARSING RESULT /////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-
-/* Node_data stores 'table.attr' or 'table.attr op value' */
-class NodeData {
-  String table_name;
-  String attr_name;
-  char operation; /* =, <, > only */
-  float value;
-
-  public NodeData() {
-  }
-
-  public NodeData(String tn, String an, char op, float val) {
-    table_name = tn;
-    attr_name = an;
-    operation = op;
-    value = val;
-  }
-  
-}
-
-/* Node element for Node List */
-/* It encapsulates the Node Data */
-class Node {
-  NodeData node;
-  Node prev;
-  Node next;
-
-  public Node() {
-	node = new NodeData();
-	prev = null;
-	next = null;
-  }
-
-  public Node(NodeData nd) {
-    node = nd;
-    prev = null;
-    next = null;
-  }
-  
-  public Node(NodeData nd, Node p, Node n) {
-    node = nd;
-    prev = p;
-    next = n;
-  }
-}
-
-/* Node List stores multiple node_data in  a list */
-class NodeList {
-	Node head;
-	Node tail;
-	
-	public NodeList() {
-	  head = new Node();
-	  tail = new Node();
-	  head.next = tail;
-	  tail.prev = head;
-	}
-	
-	public void insert(NodeData nd) { 
-	  Node n_temp = new Node(nd);
-	  n_temp.prev = tail.prev;
-	  n_temp.next = tail;
-	  tail.prev.next = n_temp;
-	  tail.prev = n_temp;
-	}
-
-	public void print() {
-		System.out.print("Print Node List : ");
-		Node temp = head.next;
-		while(temp.next != null) {
-		    NodeData nd = temp.node;
-			System.out.print("("+ nd.table_name + ","+ nd.attr_name + "," + nd.operation + "," + Float.toString(nd.value)+ ") ");
-			temp = temp.next;
-		}
-		System.out.println("");
-	}
-}
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-
-PARSER_END(SQLparser)SKIP :{  " "| "\r"| "\t"
-| "\n"}
 TOKEN:
 {
   < AND : "AND" > 
@@ -376,76 +88,129 @@ TOKEN : /* Statements */
   < SELECT : "select" >
 | < FROM : "from" >
 | < WHERE : "where" >
+| < ORDERBY : "order by" >
+| < BSIZE : "bsize" > // buffer size B
+| < RNUM : "rnum" > // number of records per page
+| < TIME : "time" > // time mode : calculate execution time 
 }
+
 
 TOKEN:
 {
-  < ID : ( ["A"-"Z"]|["a"-"z"])(["0"-"9"]| ["A"-"Z"]|["a"-"z"])* > /* ID of table or attribute*/
+
+ < ID : ( ["A"-"Z"]|["a"-"z"])(["0"-"9"]| ["A"-"Z"]|["a"-"z"])* > /* ID of table or attribute*/
 | < OP : "="|"<"|">" >
 | < VALUE : ((["0"-"9"])+)(("."["0"-"9"])?) >  /*float number */
+| < STRING : ("\"")((["A"-"Z"]|["a"-"z"]|["0"-"9"])+)("\"") | ("\'")((["A"-"Z"]|["a"-"z"]|["0"-"9"])+)("\'") > /* 'String' or "string" */
+
 }
 
 
 
-int one_line():
+
+int one_line():
 {
-  NodeList select_list;
-  NodeList from_list;
-  NodeList where_list;
+  QueryList select_list=null;
+  QueryList from_list=null;
+  QueryList where_list=null;
+  QueryList orderby_list=null;
+  
   int output;
   Token value;
   float f;
+  int valid;
+
+  Token temp;
+  int bsize;
+  int rnum;
+  boolean time_mode;
+  
 }
 {
-  // Select Comm
+
+(    
+  // Select Command
   (
     < SELECT > select_list=select() {
-      
-      /*For debugging*/
-      System.out.println("Select!");
-	  if(select_list == null) {
-	    System.out.println("*");
-	  }
-	  else {
-	    System.out.print("Select List : ");
-	    select_list.print();
-	  }
+	  if(select_list != null) select_list.op_type = 1;
     }
   )
 
-  //From Comm
-  (    < FROM > from_list=from() {
-      
-	  /*For debugging*/
-      System.out.println("From!");
-	  System.out.print("From List : ");
-	  from_list.print();
-	  
+  //From Command
+  (
+    < FROM > from_list=from() {
+	  from_list.op_type = 2;
     }
   )
   
-  //Where Comm
+  //Where Command
   (
     < WHERE > where_list=where() {
-      
-      /*For debugging*/
-      System.out.println("Where!");
-	  System.out.print("Where List : ");
-	  where_list.print();
-	  
+      where_list.op_type = 3;	  
     }
-  )? // one or zero where statement possible
+  )? // one or zero where statement possible
+
+  //Order By Clause
+  (
+    < ORDERBY > orderby_list=orderby() {
+		orderby_list.op_type = 4;
+    }
+  )? // one or zero order by statement possible
+
+
   //End with SemiColon
   ";"
   {
     //Function to interpret the comm
     //by select, from, where list
     
-	/* ***************TODO***************** */
+	Handler handler = new Handler(select_list, from_list, where_list, orderby_list);
 
-    return 0;
+    //print the parsed result
+    System.out.println("Parsed Result...");
+    System.out.println();
+    handler.print();
+    
+	//return validity of the query
+	return handler.check();
   }
+)
 
+
+/* For External Sorting, do some mode selection with std input */
+
+| < BSIZE > temp=< VALUE >
+ {
+    try { 
+      bsize = Integer.parseInt(temp.toString());
+      System.out.println("bsize : " + bsize);
+      return 2;
+    } catch(Exception e) {
+      return 3;
+  }
+ }
+| < RNUM > temp=< VALUE >
+ {
+   try { 
+     rnum = Integer.parseInt(temp.toString());
+     System.out.println("rnum : " + rnum);
+     return 2;
+   } catch(Exception e) {
+     return 3;
+   }
+ }
+| < TIME >  temp=< ID >
+ {
+    if(temp.toString().equals("on")) {
+      time_mode = true;
+      return 2;
+    }
+    if(temp.toString().equals("off")) {
+      time_mode = false;
+      return 2;
+    }
+    return 3;
+ }
 // end statement
 | ";"
   {
@@ -454,28 +219,35 @@ TOKEN:
 }
 
 
-/* select comm : * or table.attr1, ..., table.attrn */
-NodeList select():
+/* SELECT COMMAND : * or table.attr_1, ..., table.attr_n */
+QueryList select():
 {
-  NodeList output = null; /* if *, then output is null */
-                          /* otherwise, it is a list of "table.attr" */
-  NodeData nd;
+  // if *, then output is null
+  // otherwise, it is a list of "table.attr" 
+  QueryList output = null; 
+                          
+  Query q;
 }
 {
+
+// if *, just return null value
   "*"
   {
-    return output; // if *, just return null value
+    return output;
   }
+  
+// if not *, then parse and make a list of 'table.attribute'
 | (
-    nd=attr()
+    q=attr() 
     {
-	  output = new NodeList();
-	  output.insert(nd);
+	  output = new QueryList();
+	  output.insert(q);
     }
   )
-  (	"," nd=attr()
+  (
+	"," q=attr()  // each attributes are separated using ','
 	{
-	  output.insert(nd);
+	  output.insert(q);
 	}
   )*
   {
@@ -484,106 +256,163 @@ NodeList select():
 
 }
 
-/* from comm : table1, ..., tablen */
-NodeList from():
+/* FROM COMMAND : table_1, ..., table_n */
+QueryList from():
 {
-  NodeList output = null;
-  NodeData nd;
+  QueryList output = null;
+  Query q;
 }
 {
+// parse and make a list of 'table'
   (
-    nd=table()
+    q=table() 
     {
-	  output = new NodeList();
-	  output.insert(nd);
+	  output = new QueryList();
+	  output.insert(q);
     }
   )
   (
-	"," nd=table()
+	"," q=table() // each tables are separated using ','
 	{
-	  output.insert(nd);
+	  output.insert(q);
 	}
-  )*
+  )?
   {
     return output;
   }
 }
 
-/* where comm : t.attr op val 1, ..., t.attr op val n*/
-NodeList where():
+/* WHERE COMMAND : operation_1, ..., operation_n*/
+QueryList where():
 {
-  NodeList output = null;
-  NodeData nd;
+  QueryList output = null;
+  Query q;
 }
 {
+// parse and make a list of 'operation'
   (
-    nd=operation()
+    q=operation()
     {
-	  output = new NodeList();
-	  output.insert(nd);
+	  output = new QueryList();
+	  output.insert(q);
     }
   )
   (
-	< AND > nd=operation()
+	< AND > q=operation() // each operations are separated using 'AND'
 	{
-	  output.insert(nd);
+	  output.insert(q);
 	}
-  )*
+  )?
   {
     return output;
   }
 }
+
+/* SELECT COMMAND : * or table.attr_1, ..., table.attr_n */
+QueryList orderby():
+{
+  // if *, then output is null
+  // otherwise, it is a list of "table.attr" 
+  QueryList output = null; 
+                          
+  Query q;
+}
+{
+  (
+    q=attr() 
+    {
+	  output = new QueryList();
+	  output.insert(q);
+    }
+  )
+  {
+    return output;
+  }
+
+}
+
+//////////////////////////////////////////////////////////////////////
+
 
 /* Table : "table" */
-NodeData table():
+Query table():
 {
-  NodeData output;
+  Query output;
   Token table;
 }
 {
   table=< ID > {
-    output = new NodeData();
-    output.table_name = table.toString();
+    output = new Query(table.toString());
     return output;
   }
 }
 
 
 /* attribute : "table.attr" */
-NodeData attr():
+Query attr():
 {
-  NodeData output;
+  Query output;
   Token table;
   Token attr;
 }
 {
   table=< ID >"."attr=< ID > {
-    output = new NodeData();
-    output.table_name = table.toString();
-    output.attr_name = attr.toString();
+    output = new Query(table.toString(), attr.toString());
     return output;
   }
 }
 
 
-/* operation : "table.attr op value" */
-NodeData operation():
+/* operation : "table.attr op value" (i.e. S.sid > 20)
+                OR "table.attr op table.attr" (i.e. S.sid R.sid) */
+
+Query operation():
 {
-  NodeData output;
+  Query output;
   Token table;
   Token attr;
   Token operation;
   Token value;
+  Token table2;
+  Token attr2;
+
+  String t;
+  String a;
+  char o;
 }
 {
-  table=< ID >"."attr=< ID > operation=< OP > value=< VALUE >{
-    output = new NodeData();
-    output.table_name = table.toString();
-    output.attr_name = attr.toString();
-    output.operation = (operation.toString()).charAt(0);
-    output.value = Float.parseFloat(value.toString());
-    return output;
-  }
+  // left side of the operation is a common part
+  // parse table.attr op
+  (
+    table=< ID >"."attr=< ID > operation=< OP >{
+      t = table.toString();
+      a = attr.toString();
+      o = (operation.toString()).charAt(0);
+    
+    }
+  )
+  // right side of the operation can be either
+  // 1) constant integer/float value  i.e. S.sid = 20
+  (
+	value=< VALUE > {
+	  output = new Query(t, a, o, value.toString());
+	  return output;
+	}
+  |
+  // 2) constant String value   i.e. S.sname = 'Steven'
+  // in this case, the string value must have either '...' or "..." format
+    value=< STRING > {
+	  output = new Query(t, a, o, value.toString());
+	  return output;
+	}
+  |
+  // 3) another table.attr   i.e. S.sid = R.sid
+	table2=< ID >"."attr2=< ID >{
+	  output = new Query(t, a, o, table2.toString(), attr2.toString());
+	  return output;
+	}
+  )
+
 }
 
   

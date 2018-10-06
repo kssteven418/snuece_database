@@ -17,11 +17,21 @@ public interface SQLparserConstants {
   /** RegularExpression Id. */
   int WHERE = 8;
   /** RegularExpression Id. */
-  int ID = 9;
+  int ORDERBY = 9;
   /** RegularExpression Id. */
-  int OP = 10;
+  int BSIZE = 10;
   /** RegularExpression Id. */
-  int VALUE = 11;
+  int RNUM = 11;
+  /** RegularExpression Id. */
+  int TIME = 12;
+  /** RegularExpression Id. */
+  int ID = 13;
+  /** RegularExpression Id. */
+  int OP = 14;
+  /** RegularExpression Id. */
+  int VALUE = 15;
+  /** RegularExpression Id. */
+  int STRING = 16;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -37,9 +47,14 @@ public interface SQLparserConstants {
     "\"select\"",
     "\"from\"",
     "\"where\"",
+    "\"order by\"",
+    "\"bsize\"",
+    "\"rnum\"",
+    "\"time\"",
     "<ID>",
     "<OP>",
     "<VALUE>",
+    "<STRING>",
     "\";\"",
     "\"*\"",
     "\",\"",
