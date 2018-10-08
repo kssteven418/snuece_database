@@ -41,17 +41,17 @@ private static final int jjStopStringLiteralDfa_0(int pos, long active0)
             return 1;
          return -1;
       case 3:
-         if ((active0 & 0x740L) != 0L)
+         if ((active0 & 0x1740L) != 0L)
          {
             jjmatchedKind = 13;
             jjmatchedPos = 3;
             return 1;
          }
-         if ((active0 & 0x1880L) != 0L)
+         if ((active0 & 0x880L) != 0L)
             return 1;
          return -1;
       case 4:
-         if ((active0 & 0x240L) != 0L)
+         if ((active0 & 0x1240L) != 0L)
          {
             jjmatchedKind = 13;
             jjmatchedPos = 4;
@@ -61,7 +61,7 @@ private static final int jjStopStringLiteralDfa_0(int pos, long active0)
             return 1;
          return -1;
       case 5:
-         if ((active0 & 0x40L) != 0L)
+         if ((active0 & 0x1040L) != 0L)
             return 1;
          if ((active0 & 0x200L) != 0L)
          {
@@ -222,9 +222,10 @@ static private int jjMoveStringLiteralDfa3_0(long old0, long active0)
    {
       case 69:
       case 101:
-         if ((active0 & 0x1000L) != 0L)
-            return jjStartNfaWithStates_0(3, 12, 1);
          return jjMoveStringLiteralDfa4_0(active0, 0x240L);
+      case 73:
+      case 105:
+         return jjMoveStringLiteralDfa4_0(active0, 0x1000L);
       case 77:
       case 109:
          if ((active0 & 0x80L) != 0L)
@@ -264,6 +265,9 @@ static private int jjMoveStringLiteralDfa4_0(long old0, long active0)
          else if ((active0 & 0x400L) != 0L)
             return jjStartNfaWithStates_0(4, 10, 1);
          break;
+      case 78:
+      case 110:
+         return jjMoveStringLiteralDfa5_0(active0, 0x1000L);
       case 82:
       case 114:
          return jjMoveStringLiteralDfa5_0(active0, 0x200L);
@@ -285,6 +289,11 @@ static private int jjMoveStringLiteralDfa5_0(long old0, long active0)
    {
       case 32:
          return jjMoveStringLiteralDfa6_0(active0, 0x200L);
+      case 71:
+      case 103:
+         if ((active0 & 0x1000L) != 0L)
+            return jjStartNfaWithStates_0(5, 12, 1);
+         break;
       case 84:
       case 116:
          if ((active0 & 0x40L) != 0L)

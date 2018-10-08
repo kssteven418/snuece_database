@@ -16,10 +16,18 @@ import java.util.List;
 public class SQLparser
 {
 
+  static ExtSort sorter;
+  
   public static void main(String args []) throws ParseException
   {
     SQLparser parser = new SQLparser(System.in);
+    
+	Table S = new Table("src/S.txt", "S");
+	Table R = new Table("src/R.txt", "R");
+	Table B = new Table("src/B.txt", "B");
+	System.out.println();
 
+	sorter = new ExtSort();
 	
     while (true)
     {
@@ -39,10 +47,11 @@ public class SQLparser
           
           /* external sort mode change */
 		  case 2:
-		  System.out.println("External sort mode changed.\n");
+		  //System.out.println("External sort mode changed.\n");
+		  System.out.println("");
           break;
           case 3: // wrong mode selection input
-          System.out.println("NOK: Not a valid input for mode selection.\n");
+          System.out.println("NOK: Not a valid mode input.\n");
           
           default : 
           break;
@@ -91,7 +100,7 @@ TOKEN : /* Statements */
 | < ORDERBY : "order by" >
 | < BSIZE : "bsize" > // buffer size B
 | < RNUM : "rnum" > // number of records per page
-| < TIME : "time" > // time mode : calculate execution time 
+| < TIMING : "timing" > // time mode : calculate execution time 
 }
 
 
@@ -123,7 +132,6 @@ int one_line():
   Token temp;
   int bsize;
   int rnum;
-  boolean time_mode;
   
 }
 {
@@ -183,7 +191,8 @@ int one_line():
  {
     try { 
       bsize = Integer.parseInt(temp.toString());
-      System.out.println("bsize : " + bsize);
+      sorter.setBsize(bsize);
+      System.out.println("bsize : " + sorter.bsize);
       return 2;
     } catch(Exception e) {
       return 3;
@@ -193,20 +202,23 @@ int one_line():
  {
    try { 
      rnum = Integer.parseInt(temp.toString());
-     System.out.println("rnum : " + rnum);
+     sorter.setRnum(rnum);
+     System.out.println("rnum : " + sorter.rnum);
      return 2;
    } catch(Exception e) {
      return 3;
    }
  }
-| < TIME >  temp=< ID >
+| < TIMING >  temp=< ID >
  {
     if(temp.toString().equals("on")) {
-      time_mode = true;
+      sorter.setTiming(true);
+      System.out.println("Timing mode : on");
       return 2;
     }
     if(temp.toString().equals("off")) {
-      time_mode = false;
+      sorter.setTiming(false);
+      System.out.println("Timing mode : false");
       return 2;
     }
     return 3;

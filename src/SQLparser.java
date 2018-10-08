@@ -6,10 +6,18 @@ import java.util.List;
 
 public class SQLparser implements SQLparserConstants {
 
+  static ExtSort sorter;
+
   public static void main(String args []) throws ParseException
   {
     SQLparser parser = new SQLparser(System.in);
 
+        Table S = new Table("src/S.txt", "S");
+        Table R = new Table("src/R.txt", "R");
+        Table B = new Table("src/B.txt", "B");
+        System.out.println();
+
+        sorter = new ExtSort();
 
     while (true)
     {
@@ -29,10 +37,11 @@ public class SQLparser implements SQLparserConstants {
 
           /* external sort mode change */
                   case 2:
-                  System.out.println("External sort mode changed.\u005cn");
+                  //System.out.println("External sort mode changed.\n");
+                  System.out.println("");
           break;
           case 3: // wrong mode selection input
-          System.out.println("NOK: Not a valid input for mode selection.\u005cn");
+          System.out.println("NOK: Not a valid mode input.\u005cn");
 
           default :
           break;
@@ -69,7 +78,6 @@ public class SQLparser implements SQLparserConstants {
   Token temp;
   int bsize;
   int rnum;
-  boolean time_mode;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case SELECT:
       jj_consume_token(SELECT);
@@ -117,7 +125,8 @@ public class SQLparser implements SQLparserConstants {
       temp = jj_consume_token(VALUE);
     try {
       bsize = Integer.parseInt(temp.toString());
-      System.out.println("bsize : " + bsize);
+      sorter.setBsize(bsize);
+      System.out.println("bsize : " + sorter.bsize);
       {if (true) return 2;}
     } catch(Exception e) {
       {if (true) return 3;}
@@ -128,21 +137,24 @@ public class SQLparser implements SQLparserConstants {
       temp = jj_consume_token(VALUE);
    try {
      rnum = Integer.parseInt(temp.toString());
-     System.out.println("rnum : " + rnum);
+     sorter.setRnum(rnum);
+     System.out.println("rnum : " + sorter.rnum);
      {if (true) return 2;}
    } catch(Exception e) {
      {if (true) return 3;}
    }
       break;
-    case TIME:
-      jj_consume_token(TIME);
+    case TIMING:
+      jj_consume_token(TIMING);
       temp = jj_consume_token(ID);
     if(temp.toString().equals("on")) {
-      time_mode = true;
+      sorter.setTiming(true);
+      System.out.println("Timing mode : on");
       {if (true) return 2;}
     }
     if(temp.toString().equals("off")) {
-      time_mode = false;
+      sorter.setTiming(false);
+      System.out.println("Timing mode : false");
       {if (true) return 2;}
     }
     {if (true) return 3;}

@@ -23,7 +23,7 @@ public interface SQLparserConstants {
   /** RegularExpression Id. */
   int RNUM = 11;
   /** RegularExpression Id. */
-  int TIME = 12;
+  int TIMING = 12;
   /** RegularExpression Id. */
   int ID = 13;
   /** RegularExpression Id. */
@@ -50,7 +50,7 @@ public interface SQLparserConstants {
     "\"order by\"",
     "\"bsize\"",
     "\"rnum\"",
-    "\"time\"",
+    "\"timing\"",
     "<ID>",
     "<OP>",
     "<VALUE>",
