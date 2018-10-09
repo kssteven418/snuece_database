@@ -2,18 +2,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Handler {
+	
+	/* query lists */
 	QueryList selectList;
 	QueryList fromList;
 	QueryList whereList;
 	QueryList orderbyList;
+	
+	/* tables to handle */
+	ArrayList<Table> tables;
+	
+	/* External Sorter */
+	ExtSort sorter;
 
-	Handler(QueryList s, QueryList f, QueryList w, QueryList ob) {
-		// copy references only
+	
+	Handler(QueryList s, QueryList f, QueryList w, QueryList ob, 
+			ArrayList<Table> _tables, ExtSort _sorter) {
 		
+		// all inputs are references, copy references only
 		selectList = s;
 		fromList = f;
 		whereList = w;
 		orderbyList = ob;
+		
+		tables = _tables;
+		sorter = _sorter;
 		
 	}
 	
@@ -81,6 +94,21 @@ public class Handler {
 		}
 		
 		return 0;
+	}
+	
+	int handle() {
+		int checkValue = check();
+		if(checkValue<0) return -1; // parsing error
+		
+		//otherwise, handle OrderBy operation
+		handleOrderby();
+		return 0;
+	}
+	
+	void handleOrderby() {
+		//tentatively, test for the first table..
+		sorter.init(tables.get(0).tupleLen, tables.get(0).strLen, 1, 0);
+		sorter.run(tables.get(0), 0);
 	}
 
 }

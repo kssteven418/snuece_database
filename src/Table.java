@@ -11,7 +11,7 @@ public class Table {
 	String tname;
 	int nrow;
 	int ncol;
-	int strLen=21; //string length is 20, 21 including \0
+	int strLen=6; //string length is 20, 21 including \0
 	int tupleLen; // ncol*strLen
 	
 	/* data info */
@@ -21,12 +21,12 @@ public class Table {
 	/* data */
 	ArrayList<char[]> data; // list of data records(tuples)
 	
-	
+
 	
 	// initiation constructor : read data from the file in the given path
-	Table(String path, String name){
+	Table(String path, String _tname){
 		
-		tname = name;
+		tname = _tname;
 		
 		names = new ArrayList<String>();
 		types = new ArrayList<Integer>();
@@ -71,6 +71,30 @@ public class Table {
 		print();
 		
 	}
+	
+
+	// empty table constructor
+	Table(String _tname, int _ncol, ArrayList<String> _names, ArrayList<Integer> _types){
+		tname = new String(_tname);
+		nrow = 0;
+		ncol = _ncol;
+		tupleLen = strLen * ncol;
+		names = new ArrayList<String>(_names);
+		types = new ArrayList<Integer>(_types);
+		data = new ArrayList<char[]>();
+	}
+	
+	//insert tuple into the data list
+	void insert(char[] tup) {
+		if(tup.length != tupleLen) {// length does not match
+			System.out.println("Error : Input tuple length does not match");
+			return;
+		}
+		char[] temp = new char[tup.length];
+		System.arraycopy(tup, 0, temp, 0, tup.length);
+		data.add(temp);
+	}
+	
 	
 	void print() {
 		

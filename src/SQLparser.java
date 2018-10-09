@@ -7,14 +7,22 @@ import java.util.List;
 public class SQLparser implements SQLparserConstants {
 
   static ExtSort sorter;
+  static ArrayList<Table> tables;
 
   public static void main(String args []) throws ParseException
   {
     SQLparser parser = new SQLparser(System.in);
 
+        Table X = new Table("src/X.txt", "X");
         Table S = new Table("src/S.txt", "S");
         Table R = new Table("src/R.txt", "R");
         Table B = new Table("src/B.txt", "B");
+        tables = new ArrayList<Table>();
+        tables.add(X);
+        tables.add(S);
+        tables.add(R);
+        tables.add(B);
+
         System.out.println();
 
         sorter = new ExtSort();
@@ -110,7 +118,7 @@ public class SQLparser implements SQLparserConstants {
     //Function to interpret the comm
     //by select, from, where list
 
-        Handler handler = new Handler(select_list, from_list, where_list, orderby_list);
+        Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter);
 
     //print the parsed result
     System.out.println("Parsed Result...");
@@ -118,7 +126,7 @@ public class SQLparser implements SQLparserConstants {
     handler.print();
 
         //return validity of the query
-        {if (true) return handler.check();}
+        {if (true) return handler.handle();}
       break;
     case BSIZE:
       jj_consume_token(BSIZE);
