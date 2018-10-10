@@ -1,3 +1,7 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 
 public class ExtSort {
 	
@@ -102,7 +106,7 @@ public class ExtSort {
 		return true;
 	}
 	
-	/////////////////////////////////////////////////////////////////////////////////
+	/*********************** INIT and RUN FUNCTIONS **************************/
 	
 	// initiation
 	// tl:tupleLen, sl:strLen(expecting 21)
@@ -143,12 +147,17 @@ public class ExtSort {
 		if(input.data.size()==0) return null;
 		
 		Table temp = run(input, 0);
-		int i = 1;
+		int i = 0;
 		
 		if(print) {
-			System.out.println("PASS "+0);
+			System.out.println("PASS "+i);
 			temp.print();
 		}
+		
+		//write into file
+		writeFile(temp, i);
+		
+		i++;
 		
 		//pass until run size becomes bigger than input size
 		while(true) {
@@ -160,6 +169,10 @@ public class ExtSort {
 				System.out.println("PASS "+i);
 				temp.print();
 			}
+
+			//write into file
+			writeFile(temp, i);
+			
 			i++;
 		}
 		
@@ -333,6 +346,9 @@ public class ExtSort {
 		return output;
 	}
 	
+	
+	/************************* HELPER FUNCTIONS ***************************/
+	
 	// helper function for the 0th pass
 	// sort buffer from (startPos)th tuple to (endPos)th tuple
 	void internalSort(int startPos, int endPos) {
@@ -424,10 +440,54 @@ public class ExtSort {
 		}
 	}
 	
+	
+	
+	/************************* WRITE FUNCTIONS ***************************/
+	
+	void writeFile(Table table, int pass) {
+		String fn = "src/runs/"+table.tname+"_"+pass+"_";
+		int r = 0;
+		int i = 0;
+		boolean finish = true;
+		
+		while(finish) {
+			File file = new File(fn+r+".txt");	
+			try {
+				FileWriter fw = new FileWriter(file);
+				for(int j=0; j<runLen*rnum; j++) {
+					if(i>=table.data.size()) {
+						finish = false;
+						break;
+					}
+					String tuple = "";
+					for(int k=0; k<table.ncol; k++) {
+						tuple = tuple + CharStr.getString(table.data.get(i), table.strLen*k) + "\t";
+					}
+					tuple = tuple + "\n";
+					
+					//System.out.print(tuple);
+					fw.write(tuple);
+					i++;
+				}
+				fw.close();
+				//System.out.println("----");
+			} 
+			catch (IOException e) {
+				e.printStackTrace();
+			}
+			r++;
+		}
+		//System.out.println(r);
+	}
+	
 }
 
 
-//helper functions
+
+
+
+
+// static functions to handle String and characters
 class CharStr{
 	
 	static void copyString(char[] dest, int destInd, String src, int len) {

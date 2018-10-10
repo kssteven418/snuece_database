@@ -68,16 +68,22 @@ public class Handler {
 		}
 		if(!handleFrom()) return -1;
 		
+		// the only table stated in the from statement
+		Table temp = tables.get(findTable(fromList.get(0).ta.table));
 		
 		//3rd, handle OrderBy statement
 		//by sorting the table
-		Table temp = handleOrderby();
-		if(temp==null) return -1;
-		//temp.print();
+		if(orderbyList!=null) { 
+			// if order by statement is null, then simply use the table stated in the from statement
+			temp = handleOrderby();
+			if(temp==null) return -1;
+		}
 		
 		//4th, handle Where statement
-		temp = handleWhere(temp);
-		if(temp==null) return -1;
+		if(whereList!=null) {
+			temp = handleWhere(temp);
+			if(temp==null) return -1;
+		}
 		
 		//finally, handle Select statement
 		temp = handleSelect(temp);
@@ -150,6 +156,7 @@ public class Handler {
 	}
 	
 	Table handleOrderby() {
+		
 		
 		//find the appropriate column
 		Query q = orderbyList.get(0);

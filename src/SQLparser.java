@@ -14,11 +14,13 @@ public class SQLparser implements SQLparserConstants {
     SQLparser parser = new SQLparser(System.in);
 
         //Table X = new Table("src/X.txt", "X");
+        Table Y = new Table("src/Y.txt", "Y");
         Table S = new Table("src/S.txt", "S");
         Table R = new Table("src/R.txt", "R");
         Table B = new Table("src/B.txt", "B");
         tables = new ArrayList<Table>();
         //tables.add(X);
+        tables.add(Y);
         tables.add(S);
         tables.add(R);
         tables.add(B);
