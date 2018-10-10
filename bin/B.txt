@@ -1,5 +1,0 @@
-bid(integer) bname(string) color(string)
-101 Interlake blue
-102 Interlake red
-103 Clipper green
-104 Marine red

@@ -53,6 +53,57 @@ public class ExtSort {
 		timing = _timing;
 	}
 	
+	
+	/* DEBUGGING MODULES */
+	// automatic debugging function
+	void runTest(Table input) {
+		for(int b=3; b<10; b++) {
+			for(int r=2; r<10; r++) {
+				setBsize(b);
+				setRnum(r);
+				init(input.tupleLen, input.strLen, 1, 0);
+				
+				boolean succ = true;
+				Table newinput = new Table(input.tname, input.ncol, input.names, input.types);
+				for(int i=0; i<input.data.size(); i++) {
+					newinput.insert(input.data.get(i));
+					Table output = run(newinput, false);
+					
+					boolean tempSucc = checkOutput(output);
+					
+					if(!tempSucc) {
+						succ = false;
+						System.out.println("Wrong for B: "+b+", R: "+r+", i: "+i);
+					}
+				}
+				if(succ) {
+					System.out.println("Success for B: "+b+", R: "+r);
+				}
+			}
+			
+		}
+		
+		
+	}
+	
+	boolean checkOutput(Table output) {
+		for(int i=0; i<output.data.size()-1; i++) {
+			String temp = CharStr.getString(output.data.get(i), colIndex);
+			String temp2 = CharStr.getString(output.data.get(i+1), colIndex);
+			if(type==0) {
+				if(Integer.parseInt(temp)>Integer.parseInt(temp2)) 
+					return false;
+			}
+			else {
+				if(temp.compareTo(temp2)>0)
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////
+	
 	// initiation
 	// tl:tupleLen, sl:strLen(expecting 21)
 	// col : column to sort by, type : type of col
@@ -68,15 +119,51 @@ public class ExtSort {
 		
 		buffer = new char[bsize*rnum*tupleLen];
 		// starting point of the output buffer (last page starting index)
-		outbufPos = buffer.length - tupleLen*rnum; 
+		outbufPos = bsize*rnum - rnum; 
 		
 		runLen = 0;
 	}
+		
 	
-	Table run(Table input) {
+	Table run(Table input, int _col, int _type, boolean print) {
+		init(input.tupleLen, input.strLen, _col, _type);
+		Table temp = run(input, print);
+		//temp.print();
+		
+		if(print) {
+			boolean result = checkOutput(temp);
+			System.out.println("RESULT : "+result);
+			System.out.println();
+		}
+		
+		return temp;
+	}
+	
+	Table run(Table input, boolean print) {
 		if(input.data.size()==0) return null;
-		/* call run(input, pass) */
-		return null;
+		
+		Table temp = run(input, 0);
+		int i = 1;
+		
+		if(print) {
+			System.out.println("PASS "+0);
+			temp.print();
+		}
+		
+		//pass until run size becomes bigger than input size
+		while(true) {
+			if(input.data.size()<=runLen*rnum) {
+				break;
+			}
+			temp = run(temp, i);
+			if(print) {
+				System.out.println("PASS "+i);
+				temp.print();
+			}
+			i++;
+		}
+		
+		return temp;
 	}
 	
 	Table run(Table input, int pass) {
@@ -109,31 +196,140 @@ public class ExtSort {
 			//outer loop
 			int inputStartPos = 0;
 			boolean finish = false;
+			
+			char[] nullString = new char[tupleLen];
+			for(int k=0; k<tupleLen; k++) nullString[k] = '\0'; // make null string
+			
 			while(!finish) {
-				int[] pointerBuffer = new int[bsize-1]; // pointer. nth tuple at each input page?
+				int[] pointerBuffer = new int[bsize-1]; 
 				int[] pointerTable = new int[bsize-1];
 				int[] intlist = new int[bsize-1]; //pointing value for type 0
 				String[] strlist = new String[bsize-1]; // pointing value for type 1
+				boolean[] availlist = new boolean[bsize-1];
 				
-				//initiation
+				
+				/******************* Buffer Initiation Phase *******************/
+				
 				for(int i=0; i<bsize-1; i++) { 
-					pointerBuffer[i] = rnum*i;
-					pointerTable[i] = inputStartPos + rnum*runLen*i;
+					pointerBuffer[i] = rnum*i; //next tuple to output per each page
+					pointerTable[i] = inputStartPos + rnum*runLen*i; // next input table entry to read per each page
 				}
 				
-				int lastpage = bsize-1;
-				int lasttuple = rnum-1;
-				
+				/* read one page per run, and fill in the buffer */
 				for(int i=0; i<bsize-1; i++) { // for each run
-					for(int j=0; j<rnum; j++) { // copy each tuple
-						/* idea : set the last tuple '\0' (len=0 string) ?? */
+					for(int j=0; j<rnum; j++) { // copy rnum tuples of one page
+						
+						if(pointerTable[i]>=input.data.size()){
+							finish=true; // break the while loop
+							
+							System.arraycopy(nullString, 0,
+									buffer, tupleLen*(pointerBuffer[i]+j), tupleLen);
+						}
+
+						else{
+							System.arraycopy(input.data.get(pointerTable[i]), 0,
+									buffer, tupleLen*(pointerBuffer[i]+j), tupleLen);
+						}
+						pointerTable[i]++;
 					}
 				}
 				
+				// initiate the int/string lists
+				for(int i=0; i<bsize-1; i++) {
+					updateList(intlist, strlist, availlist, pointerBuffer, i);
+				}
+				
+				
+				/********************** Merge Phase **********************/
+
+				int outbufPointer = outbufPos; // where to write output tuple
+				
+				while(true) {
+										
+					/* Ending Phase */
+					//if all invalidate. than break the loop
+					boolean breakCond = true;
+					for(int i=0; i<bsize-1; i++) {
+						if(availlist[i]) {
+							breakCond = false; 
+							break;
+						}
+					}
+					if(breakCond) {
+						//dump remaining outputBuf
+						dumpBuffer(output, outbufPos, outbufPointer-1);
+						break;
+					}
+					
+					// get minimum index
+					int minIndex = minIndex(intlist, strlist, availlist);
+					
+					
+					/* output phase */					
+					// write outputTuple to the output buffer
+					System.arraycopy(buffer, tupleLen*pointerBuffer[minIndex],
+							buffer, tupleLen*outbufPointer, tupleLen);
+					
+					// if full, dump the output buffer
+					if(outbufPointer == outbufPos + rnum - 1) {
+						//System.out.println(buffer);
+						dumpBuffer(output, outbufPos, outbufPointer);
+						outbufPointer = outbufPos;
+					}
+					// else, simply proceed the outbufPointer
+					else {
+						outbufPointer += 1;
+					}
+					
+					
+					/* input phase */
+					//proceed the buffer pointer
+					pointerBuffer[minIndex] += 1;
+					
+					//if pointer is out of bound
+					if(pointerBuffer[minIndex]>=(minIndex+1)*rnum){
+						// pointer back to the first index
+						pointerBuffer[minIndex] = rnum*minIndex;
+						
+						//read from the input table
+						//if pointer is out of bound, then copy nullString
+						if(pointerTable[minIndex] >= inputStartPos + rnum*runLen*(minIndex+1)) {
+							for(int j=0; j<rnum; j++) { 
+									System.arraycopy(nullString, 0,
+											buffer, tupleLen*(pointerBuffer[minIndex]+j), tupleLen);
+							}
+						}
+						//if pointer is not out of bound
+						else {
+							for(int j=0; j<rnum; j++) { // copy rnum tuples of one page
+								
+								if(pointerTable[minIndex]>=input.data.size()){
+									System.arraycopy(nullString, 0,
+											buffer, tupleLen*(pointerBuffer[minIndex]+j), tupleLen);
+								}
+
+								else{
+									System.arraycopy(input.data.get(pointerTable[minIndex]), 0,
+											buffer, tupleLen*(pointerBuffer[minIndex]+j), tupleLen);
+								}
+								pointerTable[minIndex]++;
+							}
+						}
+					}
+					
+					// then, update the int/string lists
+					updateList(intlist, strlist, availlist, pointerBuffer, minIndex);
+					
+				}
+				
+				inputStartPos += rnum*runLen*(bsize-1); // next set of runs
 			}
+			
+			runLen *= (bsize-1);
 		}
 		
-		output.print();
+		//System.out.println("PASS "+pass);
+		//output.print();
 		return output;
 	}
 	
@@ -165,6 +361,58 @@ public class ExtSort {
 		System.arraycopy(buffer, x_pos*tupleLen, temp, 0, tupleLen); // x->temp
 		System.arraycopy(buffer, y_pos*tupleLen, buffer, x_pos*tupleLen, tupleLen); // y->x
 		System.arraycopy(temp, 0, buffer, y_pos*tupleLen, tupleLen); // temp->y
+	}
+	
+	
+	// helper function 
+	// get the index of the available minimum value out of int/string list
+	int minIndex(int[] intlist, String[] strlist, boolean[] availlist) {
+		int index = -1;
+		int minInt = 0;
+		String minString = "";
+		
+		for(int i=0; i<availlist.length; i++) {
+			if(availlist[i]) {
+				if(index<0) { // first time
+					index = i;
+					if(type == 1) minString = strlist[i];
+					else minInt = intlist[i];
+				}
+				else {
+					if(type==0 && minInt>intlist[i]) {
+						minInt = intlist[i];
+						index = i;
+					}
+					else if(type==1 && minString.compareTo(strlist[i])>0) {
+						minString = strlist[i];
+						index = i;
+					}
+				}
+			}
+		}
+		
+		return index;
+	}
+	
+	//helper function
+	//update the int/string lists
+	void updateList(int[] intlist, String[] strlist, boolean[] availlist, int[] pointerBuffer, int i) {
+		String temp = CharStr.getString(buffer, pointerBuffer[i]*tupleLen+colIndex);
+		if(temp.length()==0) {
+			availlist[i] = false;
+		}
+		else {
+			availlist[i] = true;
+			if(type == 1) 
+				strlist[i] = temp;
+			else {
+				try {
+					intlist[i] = Integer.parseInt(temp);
+				} catch(Exception e) {
+					System.out.println("Error : Type casting error.");
+				}
+			}
+		}
 	}
 	
 	// dump (startPos)th ~ (endPos)th tuples in the buffer to the output table

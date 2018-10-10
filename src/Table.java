@@ -11,7 +11,7 @@ public class Table {
 	String tname;
 	int nrow;
 	int ncol;
-	int strLen=6; //string length is 20, 21 including \0
+	int strLen=21; //string length is 20, 21 including \0
 	int tupleLen; // ncol*strLen
 	
 	/* data info */
@@ -48,7 +48,7 @@ public class Table {
 			for (int i=0; i<parse.length; i++) {
 				String[] temp = parse[i].split("\\(|\\)");
 				names.add(temp[0]);
-				types.add(temp.equals("string")?1:0);
+				types.add(temp[1].equals("string")?1:0);
 			}
 			
 			/* then read and insert data tuples to data list */
@@ -68,7 +68,7 @@ public class Table {
 		}
 		
 		//debugging
-		print();
+		//print();
 		
 	}
 	
@@ -93,12 +93,13 @@ public class Table {
 		char[] temp = new char[tup.length];
 		System.arraycopy(tup, 0, temp, 0, tup.length);
 		data.add(temp);
+		nrow++;
 	}
 	
 	
 	void print() {
 		
-		System.out.println(tname+" "+ncol+" "+nrow);
+		System.out.println(tname+" : "+nrow+" by "+ncol);
 		
 		if(names!=null) {
 			for(String n:names)

@@ -110,6 +110,10 @@ class QueryList {
 		list.add(q);
 	}
 	
+	Query get(int ind) {
+		return list.get(ind);
+	}
+	
 	String op() {
 		switch(op_type) {
 		case 1: return "SELECT";

@@ -13,17 +13,17 @@ public class SQLparser implements SQLparserConstants {
   {
     SQLparser parser = new SQLparser(System.in);
 
-        Table X = new Table("src/X.txt", "X");
+        //Table X = new Table("src/X.txt", "X");
         Table S = new Table("src/S.txt", "S");
         Table R = new Table("src/R.txt", "R");
         Table B = new Table("src/B.txt", "B");
         tables = new ArrayList<Table>();
-        tables.add(X);
+        //tables.add(X);
         tables.add(S);
         tables.add(R);
         tables.add(B);
 
-        System.out.println();
+        //System.out.println();
 
         sorter = new ExtSort();
 
@@ -121,9 +121,9 @@ public class SQLparser implements SQLparserConstants {
         Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter);
 
     //print the parsed result
-    System.out.println("Parsed Result...");
-    System.out.println();
-    handler.print();
+    //System.out.println("Parsed Result...");
+    //System.out.println();
+    //handler.print();
 
         //return validity of the query
         {if (true) return handler.handle();}
