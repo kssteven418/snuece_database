@@ -25,13 +25,17 @@ public interface SQLparserConstants {
   /** RegularExpression Id. */
   int TIMING = 12;
   /** RegularExpression Id. */
-  int ID = 13;
+  int PRINT = 13;
   /** RegularExpression Id. */
-  int OP = 14;
+  int WRITE = 14;
   /** RegularExpression Id. */
-  int VALUE = 15;
+  int ID = 15;
   /** RegularExpression Id. */
-  int STRING = 16;
+  int OP = 16;
+  /** RegularExpression Id. */
+  int VALUE = 17;
+  /** RegularExpression Id. */
+  int STRING = 18;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -48,9 +52,11 @@ public interface SQLparserConstants {
     "\"from\"",
     "\"where\"",
     "\"order by\"",
-    "\"bsize\"",
-    "\"rnum\"",
-    "\"timing\"",
+    "\"-bsize\"",
+    "\"-rnum\"",
+    "\"-timing\"",
+    "\"-print\"",
+    "\"-write\"",
     "<ID>",
     "<OP>",
     "<VALUE>",

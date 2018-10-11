@@ -9,18 +9,20 @@ public class SQLparser implements SQLparserConstants {
   static ExtSort sorter;
   static ArrayList<Table> tables;
 
+  static boolean printMode = true;
+
   public static void main(String args []) throws ParseException
   {
     SQLparser parser = new SQLparser(System.in);
 
         //Table X = new Table("src/X.txt", "X");
-        Table Y = new Table("src/Y.txt", "Y");
+        Table Z = new Table("src/Z.txt", "Z");
         Table S = new Table("src/S.txt", "S");
         Table R = new Table("src/R.txt", "R");
         Table B = new Table("src/B.txt", "B");
         tables = new ArrayList<Table>();
         //tables.add(X);
-        tables.add(Y);
+        tables.add(Z);
         tables.add(S);
         tables.add(R);
         tables.add(B);
@@ -116,11 +118,11 @@ public class SQLparser implements SQLparserConstants {
         jj_la1[1] = jj_gen;
         ;
       }
-      jj_consume_token(17);
+      jj_consume_token(19);
     //Function to interpret the comm
     //by select, from, where list
 
-        Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter);
+        Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter, printMode);
 
     //print the parsed result
     //System.out.println("Parsed Result...");
@@ -169,8 +171,38 @@ public class SQLparser implements SQLparserConstants {
     }
     {if (true) return 3;}
       break;
-    case 17:
-      jj_consume_token(17);
+    case WRITE:
+      jj_consume_token(WRITE);
+      temp = jj_consume_token(ID);
+    if(temp.toString().equals("on")) {
+      sorter.setWrite(true);
+      System.out.println("File I/O mode : on");
+      {if (true) return 2;}
+    }
+    if(temp.toString().equals("off")) {
+      sorter.setWrite(false);
+      System.out.println("File I/O mode : false");
+      {if (true) return 2;}
+    }
+    {if (true) return 3;}
+      break;
+    case PRINT:
+      jj_consume_token(PRINT);
+      temp = jj_consume_token(ID);
+    if(temp.toString().equals("on")) {
+      printMode = true;
+      System.out.println("Print mode : on");
+      {if (true) return 2;}
+    }
+    if(temp.toString().equals("off")) {
+      printMode = false;
+      System.out.println("Print mode : off");
+      {if (true) return 2;}
+    }
+    {if (true) return 3;}
+      break;
+    case 19:
+      jj_consume_token(19);
     {if (true) return 1;}
       break;
     default:
@@ -189,8 +221,8 @@ public class SQLparser implements SQLparserConstants {
 
   Query q;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case 18:
-      jj_consume_token(18);
+    case 20:
+      jj_consume_token(20);
     {if (true) return output;}
       break;
     case ID:
@@ -200,14 +232,14 @@ public class SQLparser implements SQLparserConstants {
       label_1:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case 19:
+        case 21:
           ;
           break;
         default:
           jj_la1[3] = jj_gen;
           break label_1;
         }
-        jj_consume_token(19);
+        jj_consume_token(21);
         q = attr();
           output.insert(q);
       }
@@ -229,8 +261,8 @@ public class SQLparser implements SQLparserConstants {
           output = new QueryList();
           output.insert(q);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case 19:
-      jj_consume_token(19);
+    case 21:
+      jj_consume_token(21);
       q = table();
           output.insert(q);
       break;
@@ -296,7 +328,7 @@ public class SQLparser implements SQLparserConstants {
   Token table;
   Token attr;
     table = jj_consume_token(ID);
-    jj_consume_token(20);
+    jj_consume_token(22);
     attr = jj_consume_token(ID);
     output = new Query(table.toString(), attr.toString());
     {if (true) return output;}
@@ -318,7 +350,7 @@ public class SQLparser implements SQLparserConstants {
   String a;
   char o;
     table = jj_consume_token(ID);
-    jj_consume_token(20);
+    jj_consume_token(22);
     attr = jj_consume_token(ID);
     operation = jj_consume_token(OP);
       t = table.toString();
@@ -340,7 +372,7 @@ public class SQLparser implements SQLparserConstants {
     case ID:
       // 3) another table.attr   i.e. S.sid = R.sid
               table2 = jj_consume_token(ID);
-      jj_consume_token(20);
+      jj_consume_token(22);
       attr2 = jj_consume_token(ID);
           output = new Query(t, a, o, table2.toString(), attr2.toString());
           {if (true) return output;}
@@ -369,7 +401,7 @@ public class SQLparser implements SQLparserConstants {
       jj_la1_init_0();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0x100,0x200,0x21c40,0x80000,0x42000,0x80000,0x20,0x1a000,};
+      jj_la1_0 = new int[] {0x100,0x200,0x87c40,0x200000,0x108000,0x200000,0x20,0x68000,};
    }
 
   /** Constructor with InputStream. */
@@ -507,7 +539,7 @@ public class SQLparser implements SQLparserConstants {
   /** Generate ParseException. */
   static public ParseException generateParseException() {
     jj_expentries.clear();
-    boolean[] la1tokens = new boolean[21];
+    boolean[] la1tokens = new boolean[23];
     if (jj_kind >= 0) {
       la1tokens[jj_kind] = true;
       jj_kind = -1;
@@ -521,7 +553,7 @@ public class SQLparser implements SQLparserConstants {
         }
       }
     }
-    for (int i = 0; i < 21; i++) {
+    for (int i = 0; i < 23; i++) {
       if (la1tokens[i]) {
         jj_expentry = new int[1];
         jj_expentry[0] = i;

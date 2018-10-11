@@ -9,6 +9,7 @@ public class ExtSort {
 	int bsize; // B : number of buffers
 	int rnum; // number of records per page
 	boolean timing;
+	boolean write;
 	
 	/* belows are initiate by init function */
 	
@@ -34,6 +35,7 @@ public class ExtSort {
 		bsize = 4;
 		rnum = 2;		
 		timing = false;
+		write = true;
 	}
 	
 	/* Setters */
@@ -55,6 +57,10 @@ public class ExtSort {
 	
 	void setTiming(boolean _timing) {
 		timing = _timing;
+	}
+	
+	void setWrite(boolean _write) {
+		write = _write;
 	}
 	
 	
@@ -131,6 +137,9 @@ public class ExtSort {
 	
 	Table run(Table input, int _col, int _type, boolean print) {
 		init(input.tupleLen, input.strLen, _col, _type);
+		
+		long start = System.currentTimeMillis(); // start time
+
 		Table temp = run(input, print);
 		//temp.print();
 		
@@ -138,6 +147,12 @@ public class ExtSort {
 			boolean result = checkOutput(temp);
 			System.out.println("RESULT : "+result);
 			System.out.println();
+		}
+		
+		long end = System.currentTimeMillis();
+		
+		if(timing) {
+			System.out.println( "Sorting Time: " + ( end - start )/1000.0 );
 		}
 		
 		return temp;
@@ -155,7 +170,7 @@ public class ExtSort {
 		}
 		
 		//write into file
-		writeFile(temp, i);
+		if(write)writeFile(temp, i);
 		
 		i++;
 		
@@ -171,7 +186,7 @@ public class ExtSort {
 			}
 
 			//write into file
-			writeFile(temp, i);
+			if(write) writeFile(temp, i);
 			
 			i++;
 		}

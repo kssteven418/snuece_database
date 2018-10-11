@@ -15,9 +15,11 @@ public class Handler {
 	/* External Sorter */
 	ExtSort sorter;
 
+	// print mode for debugging
+	boolean printMode;
 	
 	Handler(QueryList s, QueryList f, QueryList w, QueryList ob, 
-			ArrayList<Table> _tables, ExtSort _sorter) {
+			ArrayList<Table> _tables, ExtSort _sorter, boolean pm) {
 		
 		// all inputs are references, copy references only
 		selectList = s;
@@ -28,7 +30,10 @@ public class Handler {
 		tables = _tables;
 		sorter = _sorter;
 		
+		printMode = pm;
+		
 	}
+	
 	
 	/* For debugging */
 	void print(){
@@ -90,7 +95,7 @@ public class Handler {
 		if(temp==null) return -1;
 		
 		//print the final table
-		temp.print();
+		if(printMode) temp.print();
 		
 		return 0;
 	}
