@@ -25,14 +25,16 @@ public class SQLparser
   {
     SQLparser parser = new SQLparser(System.in);
     
-	//Table X = new Table("src/X.txt", "X");
-	Table Z = new Table("src/Z.txt", "Z");
+	tables = new ArrayList<Table>();
+	
+	//Table Y = new Table("src/Y.txt", "Y");
+	//Table Z = new Table("src/Z.txt", "Z");
 	Table S = new Table("src/S.txt", "S");
 	Table R = new Table("src/R.txt", "R");
 	Table B = new Table("src/B.txt", "B");
-	tables = new ArrayList<Table>();
-	//tables.add(X);
-	tables.add(Z);
+
+	//tables.add(Y);
+	//tables.add(Z);
 	tables.add(S);
 	tables.add(R);
 	tables.add(B);

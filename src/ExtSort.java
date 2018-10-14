@@ -369,16 +369,19 @@ public class ExtSort {
 	void internalSort(int startPos, int endPos) {
 		//use bubble sort
 		for(int i=startPos; i<endPos; i++) {
-			for(int j=i+1; j<=endPos; j++) {
-				String x = CharStr.getString(buffer, i*tupleLen+colIndex);
+			for(int j=endPos; j>=i+1; j--) {
+				String x = CharStr.getString(buffer, (j-1)*tupleLen+colIndex);
 				String y = CharStr.getString(buffer, j*tupleLen+colIndex);
 				try {
 					if((type==1 && x.compareTo(y)>0) || (type==0 && Integer.parseInt(x) > Integer.parseInt(y))) {
-						swap(i, j);					}
+						swap(j-1, j);					
+					}
 				} catch(Exception e) {
 					System.out.println("Error : Type casting error.");
 				}
+				//System.out.println(buffer);
 			}
+			//System.out.println();
 		}
 		
 		//should adjust quicksort..??

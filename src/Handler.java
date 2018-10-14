@@ -181,7 +181,8 @@ public class Handler {
 		
 		int attr_type = tables.get(table_index).types.get(attr_index);
 		
-		Table output = sorter.run(tables.get(table_index), attr_index, attr_type, false);
+		Table output = null;
+		output = sorter.run(tables.get(table_index), attr_index, attr_type, false);
 		
 		//sorter.runTest(tables.get(0));
 		//sorter.run(tables.get(1), 1, 1, true);
