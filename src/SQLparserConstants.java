@@ -29,13 +29,15 @@ public interface SQLparserConstants {
   /** RegularExpression Id. */
   int WRITE = 14;
   /** RegularExpression Id. */
-  int ID = 15;
+  int JMODE = 15;
   /** RegularExpression Id. */
-  int OP = 16;
+  int ID = 16;
   /** RegularExpression Id. */
-  int VALUE = 17;
+  int OP = 17;
   /** RegularExpression Id. */
-  int STRING = 18;
+  int VALUE = 18;
+  /** RegularExpression Id. */
+  int STRING = 19;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -57,6 +59,7 @@ public interface SQLparserConstants {
     "\"-timing\"",
     "\"-print\"",
     "\"-write\"",
+    "\"-jmode\"",
     "<ID>",
     "<OP>",
     "<VALUE>",

@@ -97,8 +97,9 @@ class QueryList {
 	int op_type;
 	// 1 : SELECT 
 	// 2 : FROM 
-	// 3 : WHERE (either with value or attr)
+	// 3 : WHERE 
 	// 4 : ORDERBY
+	// 5 : JOIN
 	
 	List<Query> list;
 
@@ -120,6 +121,7 @@ class QueryList {
 		case 2: return "FROM";
 		case 3: return "WHERE";
 		case 4: return "ORDER BY";
+		case 5: return "JOIN";
 		default: return "UNKNOWN";
 		}
 	}

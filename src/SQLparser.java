@@ -7,9 +7,11 @@ import java.util.List;
 public class SQLparser implements SQLparserConstants {
 
   static ExtSort sorter;
+  static Join join;
   static ArrayList<Table> tables;
 
   static boolean printMode = true;
+
 
   public static void main(String args []) throws ParseException
   {
@@ -32,6 +34,7 @@ public class SQLparser implements SQLparserConstants {
         //System.out.println();
 
         sorter = new ExtSort();
+        join = new Join();
 
     while (true)
     {
@@ -120,11 +123,11 @@ public class SQLparser implements SQLparserConstants {
         jj_la1[1] = jj_gen;
         ;
       }
-      jj_consume_token(19);
+      jj_consume_token(20);
     //Function to interpret the comm
     //by select, from, where list
 
-        Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter, printMode);
+        Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter, join, printMode);
 
     //print the parsed result
     //System.out.println("Parsed Result...");
@@ -140,6 +143,7 @@ public class SQLparser implements SQLparserConstants {
     try {
       bsize = Integer.parseInt(temp.toString());
       sorter.setBsize(bsize);
+      join.setBsize(bsize);
       System.out.println("bsize : " + sorter.bsize);
       {if (true) return 2;}
     } catch(Exception e) {
@@ -152,6 +156,7 @@ public class SQLparser implements SQLparserConstants {
    try {
      rnum = Integer.parseInt(temp.toString());
      sorter.setRnum(rnum);
+     join.setRnum(rnum);
      System.out.println("rnum : " + sorter.rnum);
      {if (true) return 2;}
    } catch(Exception e) {
@@ -163,11 +168,13 @@ public class SQLparser implements SQLparserConstants {
       temp = jj_consume_token(ID);
     if(temp.toString().equals("on")) {
       sorter.setTiming(true);
+      join.setTiming(true);
       System.out.println("Timing mode : on");
       {if (true) return 2;}
     }
     if(temp.toString().equals("off")) {
       sorter.setTiming(false);
+      join.setTiming(false);
       System.out.println("Timing mode : false");
       {if (true) return 2;}
     }
@@ -203,8 +210,30 @@ public class SQLparser implements SQLparserConstants {
     }
     {if (true) return 3;}
       break;
-    case 19:
-      jj_consume_token(19);
+    case JMODE:
+      jj_consume_token(JMODE);
+      temp = jj_consume_token(ID);
+        if(temp.toString().equals("bnj")) {
+                join.jmode = 0;
+                System.out.println("Join mode : Block Nested Loop Join");
+                {if (true) return 2;}
+        }
+
+        if(temp.toString().equals("smj")) {
+                join.jmode = 1;
+                System.out.println("Join mode : Sort Merge Join");
+                {if (true) return 2;}
+        }
+
+        if(temp.toString().equals("hj")) {
+                join.jmode = 2;
+                System.out.println("Join mode : Hash Join");
+                {if (true) return 2;}
+        }
+        {if (true) return 3;}
+      break;
+    case 20:
+      jj_consume_token(20);
     {if (true) return 1;}
       break;
     default:
@@ -223,8 +252,8 @@ public class SQLparser implements SQLparserConstants {
 
   Query q;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case 20:
-      jj_consume_token(20);
+    case 21:
+      jj_consume_token(21);
     {if (true) return output;}
       break;
     case ID:
@@ -234,14 +263,14 @@ public class SQLparser implements SQLparserConstants {
       label_1:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case 21:
+        case 22:
           ;
           break;
         default:
           jj_la1[3] = jj_gen;
           break label_1;
         }
-        jj_consume_token(21);
+        jj_consume_token(22);
         q = attr();
           output.insert(q);
       }
@@ -263,8 +292,8 @@ public class SQLparser implements SQLparserConstants {
           output = new QueryList();
           output.insert(q);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-    case 21:
-      jj_consume_token(21);
+    case 22:
+      jj_consume_token(22);
       q = table();
           output.insert(q);
       break;
@@ -330,7 +359,7 @@ public class SQLparser implements SQLparserConstants {
   Token table;
   Token attr;
     table = jj_consume_token(ID);
-    jj_consume_token(22);
+    jj_consume_token(23);
     attr = jj_consume_token(ID);
     output = new Query(table.toString(), attr.toString());
     {if (true) return output;}
@@ -352,7 +381,7 @@ public class SQLparser implements SQLparserConstants {
   String a;
   char o;
     table = jj_consume_token(ID);
-    jj_consume_token(22);
+    jj_consume_token(23);
     attr = jj_consume_token(ID);
     operation = jj_consume_token(OP);
       t = table.toString();
@@ -374,7 +403,7 @@ public class SQLparser implements SQLparserConstants {
     case ID:
       // 3) another table.attr   i.e. S.sid = R.sid
               table2 = jj_consume_token(ID);
-      jj_consume_token(22);
+      jj_consume_token(23);
       attr2 = jj_consume_token(ID);
           output = new Query(t, a, o, table2.toString(), attr2.toString());
           {if (true) return output;}
@@ -403,7 +432,7 @@ public class SQLparser implements SQLparserConstants {
       jj_la1_init_0();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0x100,0x200,0x87c40,0x200000,0x108000,0x200000,0x20,0x68000,};
+      jj_la1_0 = new int[] {0x100,0x200,0x10fc40,0x400000,0x210000,0x400000,0x20,0xd0000,};
    }
 
   /** Constructor with InputStream. */
@@ -541,7 +570,7 @@ public class SQLparser implements SQLparserConstants {
   /** Generate ParseException. */
   static public ParseException generateParseException() {
     jj_expentries.clear();
-    boolean[] la1tokens = new boolean[23];
+    boolean[] la1tokens = new boolean[24];
     if (jj_kind >= 0) {
       la1tokens[jj_kind] = true;
       jj_kind = -1;
@@ -555,7 +584,7 @@ public class SQLparser implements SQLparserConstants {
         }
       }
     }
-    for (int i = 0; i < 23; i++) {
+    for (int i = 0; i < 24; i++) {
       if (la1tokens[i]) {
         jj_expentry = new int[1];
         jj_expentry[0] = i;

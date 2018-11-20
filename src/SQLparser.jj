@@ -17,9 +17,11 @@ public class SQLparser
 {
 
   static ExtSort sorter;
+  static Join join;
   static ArrayList<Table> tables;
 
   static boolean printMode = true;
+  
   
   public static void main(String args []) throws ParseException
   {
@@ -42,6 +44,7 @@ public class SQLparser
 	//System.out.println();
 
 	sorter = new ExtSort();
+	join = new Join();
 	
     while (true)
     {
@@ -117,6 +120,7 @@ TOKEN : /* Statements */
 | < TIMING : "-timing" > // time mode : calculate execution time, default is false
 | < PRINT : "-print" > // print mode : print the final table, default is true
 | < WRITE : "-write" > // write mode : file output enable, default is true
+| < JMODE : "-jmode" > // join mode : bnj, smj, hj
 }
 
 
@@ -188,7 +192,7 @@ int one_line():
     //Function to interpret the comm
     //by select, from, where list
     
-	Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter, printMode);
+	Handler handler = new Handler(select_list, from_list, where_list, orderby_list, tables, sorter, join, printMode);
 
     //print the parsed result
     //System.out.println("Parsed Result...");
@@ -208,6 +212,7 @@ int one_line():
     try { 
       bsize = Integer.parseInt(temp.toString());
       sorter.setBsize(bsize);
+      join.setBsize(bsize);
       System.out.println("bsize : " + sorter.bsize);
       return 2;
     } catch(Exception e) {
@@ -219,6 +224,7 @@ int one_line():
    try { 
      rnum = Integer.parseInt(temp.toString());
      sorter.setRnum(rnum);
+     join.setRnum(rnum);
      System.out.println("rnum : " + sorter.rnum);
      return 2;
    } catch(Exception e) {
@@ -229,11 +235,13 @@ int one_line():
  {
     if(temp.toString().equals("on")) {
       sorter.setTiming(true);
+      join.setTiming(true);
       System.out.println("Timing mode : on");
       return 2;
     }
     if(temp.toString().equals("off")) {
       sorter.setTiming(false);
+      join.setTiming(false);
       System.out.println("Timing mode : false");
       return 2;
     }
@@ -267,6 +275,29 @@ int one_line():
     }
     return 3;
  }
+
+| < JMODE > temp=< ID >
+{
+	if(temp.toString().equals("bnj")) {
+	  	join.jmode = 0;
+	  	System.out.println("Join mode : Block Nested Loop Join");
+		return 2;
+	}
+	
+	if(temp.toString().equals("smj")) {
+	  	join.jmode = 1;
+	  	System.out.println("Join mode : Sort Merge Join");
+		return 2;
+	}
+	
+	if(temp.toString().equals("hj")) {
+	  	join.jmode = 2;
+	  	System.out.println("Join mode : Hash Join");
+		return 2;
+	}
+	return 3;
+}
+
 // end statement
 | ";"
   {

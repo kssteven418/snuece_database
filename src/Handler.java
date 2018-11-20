@@ -9,17 +9,25 @@ public class Handler {
 	QueryList whereList;
 	QueryList orderbyList;
 	
+	QueryList joinList;
+	
 	/* tables to handle */
 	ArrayList<Table> tables;
 	
 	/* External Sorter */
 	ExtSort sorter;
+	
+	/* Join */
+	Join join;
 
 	// print mode for debugging
 	boolean printMode;
 	
+	// number of from tables
+	int num_froms;
+	
 	Handler(QueryList s, QueryList f, QueryList w, QueryList ob, 
-			ArrayList<Table> _tables, ExtSort _sorter, boolean pm) {
+			ArrayList<Table> _tables, ExtSort _sorter, Join _join, boolean pm) {
 		
 		// all inputs are references, copy references only
 		selectList = s;
@@ -30,9 +38,14 @@ public class Handler {
 		tables = _tables;
 		sorter = _sorter;
 		
+		join = _join;
+		
 		printMode = pm;
+	
+		
 		
 	}
+
 	
 	
 	/* For debugging */
@@ -61,39 +74,81 @@ public class Handler {
 	/*********************** MAIN HANDLER *************************/
 	
 	int handle() {
+
+		
 		//1st, check the syntax
 		int checkValue = check();
 		if(checkValue<0) return -1; // parsing error
 		
+		
+		if(selectList != null) selectList.print();
+		if(fromList != null) fromList.print();
+		if(whereList != null) whereList.print();
+		if(joinList != null) joinList.print();
+		if(orderbyList != null) orderbyList.print();
+
 		//2nd, check the from statement
 		//for project 2, only one table is possible in the from statement
-		if(fromList.list.size()!=1) {
-			System.out.println("Error : For project 2, one table is acceptable for the From statement input");
+		if(fromList.list.size()==1) {
+			num_froms = 1;
+		}
+		else if(fromList.list.size()==2) {
+			num_froms = 2;
+		}
+		else {
+			System.out.println("Error : For project 3, one or two tables are acceptable for the From statement");
 			return -1;
 		}
-		if(!handleFrom()) return -1;
 		
+		if(!handleFrom()) return -1;
+
 		// the only table stated in the from statement
-		Table temp = tables.get(findTable(fromList.get(0).ta.table));
+		
+		Table temp;
+		
+		// join if the from statement has two tables
+		if(num_froms == 2) {
+			
+			// must have join statement
+			if(joinList==null) {
+				System.out.println("Error : no join statement for "
+									+fromList.get(0).ta.table+" and "+fromList.get(1).ta.table);
+				return -1;
+			}
+			
+			temp = handleJoin();
+		}
+		
+		// do not join if the from statement has two tables
+		else {
+			temp = tables.get(findTable(fromList.get(0).ta.table));
+		}
+		
 		
 		//3rd, handle OrderBy statement
 		//by sorting the table
 		if(orderbyList!=null) { 
+			
+			//error if join and orderby conflict
+			if(num_froms == 2) {
+				System.out.println("Error : cannot support both join and orderby operations");
+				return -1;
+			}
+			
 			// if order by statement is null, then simply use the table stated in the from statement
 			temp = handleOrderby();
 			if(temp==null) return -1;
 		}
-		
+
 		//4th, handle Where statement
 		if(whereList!=null) {
 			temp = handleWhere(temp);
 			if(temp==null) return -1;
 		}
-		
 		//finally, handle Select statement
 		temp = handleSelect(temp);
 		if(temp==null) return -1;
-		
+
 		//print the final table
 		if(printMode) temp.print();
 		
@@ -111,7 +166,7 @@ public class Handler {
 		for (Query q : fromList.list) {
 			fromTables.add(q.ta.table);
 		}
-		
+
 		if(selectList != null) {
 			for (Query q : selectList.list) {
 				if(!fromTables.contains(q.ta.table)) {
@@ -135,6 +190,16 @@ public class Handler {
 			}
 		}
 		
+		// divide where statements into
+		// pure where statement and pure join statement
+		whereList = divideWhereJoin(whereList);
+		
+		// joins statement must be null or length of 1
+		if(joinList != null && joinList.list.size()>=2) {
+			System.out.println("Error : More than one join statements!");
+			return -1;
+		}
+
 		if(orderbyList != null) {
 			for (Query q : orderbyList.list) {
 				if(!fromTables.contains(q.ta.table)) {
@@ -146,6 +211,32 @@ public class Handler {
 		
 		return 0;
 	}
+	
+	
+	// this function divides 
+	QueryList divideWhereJoin(QueryList list) {
+		if(list == null) {
+			joinList = null;
+			return null;
+		}
+		QueryList wl = new QueryList();
+		joinList = new QueryList();
+		wl.op_type = 3; // pure where
+		joinList.op_type = 5; // pure join
+		for (Query q : list.list) {
+			if(q.op_type == 4 && !q.ta.table.equals(q.ta2.table)) {
+				joinList.insert(q);
+			}
+			else {
+				wl.insert(q);
+			}
+		}
+		
+		if(wl.list.size()==0) wl = null;
+		if(joinList.list.size()==0) joinList = null;
+		return wl;
+	}
+	
 	
 	
 	boolean handleFrom() {
@@ -160,8 +251,49 @@ public class Handler {
 		return true;
 	}
 	
-	Table handleOrderby() {
+	Table handleJoin() {
 		
+		Query q = joinList.get(0);
+		String table = q.ta.table;
+		String attr = q.ta.attr;
+		String table2 = q.ta2.table;
+		String attr2 = q.ta2.attr;
+		char op = q.operation;
+		
+		int table_index = findTable(table);
+		if(table_index<0) {
+			System.out.println("Error : Invalid Join Statement, Not a valid table name");
+			return null;
+		}
+		
+		int table_index2 = findTable(table2);
+		if(table_index2<0) {
+			System.out.println("Error : Invalid Join Statement, Not a valid table name");
+			return null;
+		}
+		
+		int attr_index = findAttr(table_index, attr);
+		if(attr_index<0) {
+			System.out.println("Error : Invalid Join Statement, Not a valid attribute name");
+			return null;
+		}
+		
+		int attr_index2 = findAttr(table_index2, attr2);
+		if(attr_index2<0) {
+			System.out.println("Error : Invalid Join Statement, Not a valid attribute name");
+			return null;
+		}
+		
+		int attr_type = tables.get(table_index).types.get(attr_index);
+		int attr_type2 = tables.get(table_index2).types.get(attr_index2);
+
+		Table output = null;
+		output = join.run(tables.get(table_index), tables.get(table_index2), attr_index, attr_type, attr_index2, attr_type2, op);
+		
+		return output;
+	}
+	
+	Table handleOrderby() {
 		
 		//find the appropriate column
 		Query q = orderbyList.get(0);
@@ -342,6 +474,8 @@ public class Handler {
 		
 		return output;
 	}
+	
+	
 	
 	
 	

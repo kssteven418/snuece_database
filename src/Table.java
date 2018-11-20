@@ -18,6 +18,7 @@ public class Table {
 	ArrayList<String> names;
 	ArrayList<Integer> types; // 0 for int, 1 for string
 	
+	
 	/* data */
 	ArrayList<char[]> data; // list of data records(tuples)
 	
