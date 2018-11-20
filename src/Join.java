@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 
 public class Join {
 	int jmode = 0; // join mode, 0 for bnj, 1 for smj, 2 for hj
@@ -21,14 +22,38 @@ public class Join {
 	char op;
 	
 	// buffers
-	char[][] inbuffer;
-	char[][] buffer;
-	char[][] outbuffer;
+	char[][] inbuf_out; // input buffer for outer table
+	char[][] inbuf_in; // input buffer for inner table
+	char[][] outbuf; // output buffer
+	
+	int inbuf_out_max;
+	int inbuf_in_max;
+	
+	Table in; // inner table
+	Table out; // outer table
+	
+	//position in out table
+	int out_pos = 0;
+	//position in in table	
+	int in_pos = 0;
+	
+	//position in outbuf
+	int outbuf_pos = 0;
 	
 	Join(){
 		bsize = 4;
-		rnum = 2;		
+		rnum = 3;		
 		timing = false;
+	}
+	
+	//for debugging
+	void print_buffer(char[][] arr) {
+		for(int i=0; i<arr.length; i++) {
+			for(int j=0; j<arr[i].length; j++) {
+				System.out.print(arr[i][j]);
+			}
+			System.out.println();
+		}
 	}
 	
 	/* Setters */
@@ -68,22 +93,33 @@ public class Join {
 		colOut = colout;
 		typeOut = typeout;
 		colIndexOut = colOut*strLen;
+
+		op = _op;
+//
+//		System.out.println("OUT "+colOut+" "+typeOut+" "+colIndexOut);
+//		System.out.println("IN  "+colIn +" "+typeIn +" "+colIndexIn );
 		
 		/* for convenience, let's assume that the absolute size of buffers can be different,
 		 * depending on the tuple size they contain */
 		
-		// inbuffer for the outer
-		inbuffer = new char[rnum][tupleLenIn];
-		// buffer for the inner
-		buffer = new char[rnum*(bsize-2)][tupleLenOut];
-		// outbuffer
-		outbuffer = new char[rnum][tupleLenIn+tupleLenOut];
+		// in buffer for the outer
+		inbuf_out = new char[rnum][tupleLenOut];
+		// in buffer for the inner
+		inbuf_in= new char[rnum*(bsize-2)][tupleLenIn];
+		// out buffer
+		outbuf = new char[rnum][tupleLenIn+tupleLenOut];
 		
-		op = _op;
+		
+		out_pos = 0;
+		in_pos = 0;
+		outbuf_pos = 0;
 		
 	}
 	
 	Table run(Table inner, Table outer, int colin, int typein, int colout, int typeout, char op) {
+		in = inner;
+		out = outer;
+		
 		init(outer.tupleLen, inner.tupleLen, inner.strLen, colin, typein, colout, typeout, op);
 		// check for join-ability
 		// must have same types
@@ -96,12 +132,131 @@ public class Join {
 			System.out.println("Error : Sort merge join and hash join only support equality operation");
 			return null;
 		}
+		
+
+		
+		Table output = new Table(outer.tname+inner.tname, outer.ncol, inner.ncol,
+				outer.names, outer.types, outer.table,
+				inner.names, inner.types, inner.table);
+
+		
+		if(jmode==0) {
+			output = blockNestedJoin(output);
+		}
+		else if (jmode==1) {
+			output = sortMergeJoin(output);
+		}
+		else if (jmode==2) {
+			output = hashJoin(output);
+		}
+		else {
+			System.out.println("Error : Invalid join mode");
+			output = null;
+		}
+		
+		return output;
+	}
+	
+	Table blockNestedJoin(Table output) {
+
+		// scan outer table
+		out_pos = 0;
+		while(true) {
+			if(out_pos==out.data.size()) break; // scanned all outer table
+			inbuf_out_max = fill(0);
+			
+			// scan total inner table
+			in_pos = 0;
+			while(true) {
+				if(in_pos==in.data.size()) break;
+				inbuf_in_max = fill(1);
 				
+				// join by scanning tuple by tuple
+				for (int i=0; i<inbuf_out_max; i++) {
+					for(int j=0; j<inbuf_in_max; j++) {
+						
+						/* TODO : join condition check !! */
+						if(true/*join cond*/) {
+							char[] temp = joinArray(inbuf_out[i], inbuf_in[j]);
+							outbuf[outbuf_pos] = temp;
+							outbuf_pos ++;
+							//if outbuf full, flush
+							if(outbuf_pos==outbuf.length) {
+								flush(outbuf_pos, output);
+								outbuf_pos = 0; // reset
+							}
+						}
+					}
+				}
+				
+			}
+		}
+		flush(outbuf_pos, output); // flush remaining
+		
+		output.print();
+		return output;
+	}
+	
+	Table sortMergeJoin(Table output) {
 		return null;
 	}
 	
-	Table blockNestedJoin() {
+	Table hashJoin(Table output) {
+		return null;
+	}
+	
+	int fill(int mode) { // 0 if out->inbuf_out, 1 if in->inbuf_in
+		int pos = 0;
+		
+		while(true) {
+			if(mode==0) {
+				if(out_pos==out.data.size()) {
+					break;
+				}
+				if(pos==inbuf_out.length) {
+					break;
+				}
+				System.arraycopy(out.data.get(out_pos), 0, inbuf_out[pos], 0, out.tupleLen);
+				pos++;
+				out_pos++;
+			}
+			else {
+				if(in_pos==in.data.size()) {
+					break;
+				}
+				if(pos==inbuf_in.length) {
+					break;
+				}
+				System.arraycopy(in.data.get(in_pos), 0, inbuf_in[pos], 0, in.tupleLen);
+				pos++;
+				in_pos++;
+			}
+		}
+		
+		return pos;
+	}
+	
+	void flush(int max, Table output) {
+		int pos = 0;
+		while(true) {
+			if(pos==max) break;
+			output.insert(outbuf[pos]);
+			pos++;
+		}
 		
 	}
 	
+	char[] joinArray(char[] arr1, char[] arr2) {
+		char[] temp = new char[arr1.length+arr2.length];
+		int k = 0;
+		for(int i=0; i<arr1.length; i++) {
+			temp[k] = arr1[i];
+			k++;
+		}
+		for(int i=0; i<arr2.length; i++) {
+			temp[k] = arr2[i];
+			k++;
+		}
+		return temp;
+	}
 }

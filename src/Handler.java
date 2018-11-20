@@ -272,13 +272,13 @@ public class Handler {
 			return null;
 		}
 		
-		int attr_index = findAttr(table_index, attr);
+		int attr_index = findAttr(table_index, attr, table);
 		if(attr_index<0) {
 			System.out.println("Error : Invalid Join Statement, Not a valid attribute name");
 			return null;
 		}
 		
-		int attr_index2 = findAttr(table_index2, attr2);
+		int attr_index2 = findAttr(table_index2, attr2, table2);
 		if(attr_index2<0) {
 			System.out.println("Error : Invalid Join Statement, Not a valid attribute name");
 			return null;
@@ -305,7 +305,7 @@ public class Handler {
 			return null;
 		}
 		
-		int attr_index = findAttr(table_index, attr);
+		int attr_index = findAttr(table_index, attr, table);
 		if(attr_index<0) {
 			System.out.println("Error : Invalid Order By Statement, Not a valid attribute name");
 			return null;
@@ -327,10 +327,11 @@ public class Handler {
 		Table output = null;
 		
 		for(Query q: whereList.list) { // assume one from statement input
-			output = new Table(input.tname, input.ncol, input.names, input.types);
+			output = new Table(input.tname, input.ncol, input.names, input.types, input.table);
 			
 			String attr_name = q.ta.attr;
-			int attr = findAttr(temp, attr_name); // index of attr
+			String table_name = q.ta.table;
+			int attr = findAttr(temp, attr_name, table_name); // index of attr
 			if(attr<0) { // no such attribute
 				System.out.println("Error : Invalid Where Statement, no attribute");
 				return null;
@@ -381,7 +382,8 @@ public class Handler {
 			/* compare with another value i.e. R.x < R.y */
 			else if(q.op_type==4) { 
 				String attr_name2 = q.ta2.attr;
-				int attr2 = findAttr(temp, attr_name2); // index of attr2 
+				String table_name2 = q.ta2.table;
+				int attr2 = findAttr(temp, attr_name2, table_name2); // index of attr2 
 				if(attr2<0) { // no such attribute
 					System.out.println("Error : Invalid Where Statement, no attribute");
 					return null;
@@ -444,11 +446,13 @@ public class Handler {
 		ArrayList<String> names = new ArrayList<String>();
 		ArrayList<Integer> names_ind = new ArrayList<Integer>();
 		ArrayList<Integer> types = new ArrayList<Integer>();
+		ArrayList<String> table = new ArrayList<String>();
 		int strLen = input.strLen;
 		
 		for(Query q: selectList.list) {
+			String table_name = q.ta.table;
 			String attr_name = q.ta.attr;
-			int attr = findAttr(input, attr_name); // index
+			int attr = findAttr(input, attr_name, table_name); // index
 			if(attr<0) { // no such attribute
 				System.out.println("Error : Invalid Select Statement, no attribute");
 				return null;
@@ -457,9 +461,10 @@ public class Handler {
 			names.add(attr_name);
 			names_ind.add(attr);
 			types.add(type);
+			table.add(table_name);
 			
 		}
-		Table output = new Table(input.tname, names.size(), names, types);
+		Table output = new Table(input.tname, names.size(), names, types, table);
 		
 		char[] temp = new char[names.size()*strLen];
 		
@@ -529,17 +534,19 @@ public class Handler {
 	}
 	
 	// find attr index from the table(index)
-	int findAttr(int index, String name) {
+	int findAttr(int index, String name, String table) {
 		Table t = tables.get(index);
 		for(int i=0; i<t.names.size(); i++) {
-			if(t.names.get(i).equals(name)) return i;
+			if(t.names.get(i).equals(name) && t.table.get(i).equals(table)) 
+				return i;
 		}
 		return -1;
 	}
 	
-	int findAttr(Table t, String name) {
+	int findAttr(Table t, String name, String table) {
 		for(int i=0; i<t.names.size(); i++) {
-			if(t.names.get(i).equals(name)) return i;
+			if(t.names.get(i).equals(name) && t.table.get(i).equals(table)) 
+				return i;
 		}
 		return -1;
 	}

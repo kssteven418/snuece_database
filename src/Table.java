@@ -17,7 +17,7 @@ public class Table {
 	/* data info */
 	ArrayList<String> names;
 	ArrayList<Integer> types; // 0 for int, 1 for string
-	
+	ArrayList<String> table;
 	
 	/* data */
 	ArrayList<char[]> data; // list of data records(tuples)
@@ -32,6 +32,7 @@ public class Table {
 		names = new ArrayList<String>();
 		types = new ArrayList<Integer>();
 		data = new ArrayList<char[]>();
+		table = new ArrayList<String>();
 		
 	
 		try {
@@ -50,6 +51,7 @@ public class Table {
 				String[] temp = parse[i].split("\\(|\\)");
 				names.add(temp[0]);
 				types.add(temp[1].equals("string")?1:0);
+				table.add(tname);
 			}
 			
 			/* then read and insert data tuples to data list */
@@ -75,15 +77,37 @@ public class Table {
 	
 
 	// empty table constructor
-	Table(String _tname, int _ncol, ArrayList<String> _names, ArrayList<Integer> _types){
+	Table(String _tname, int _ncol, ArrayList<String> _names, ArrayList<Integer> _types, ArrayList<String> _table){
 		tname = new String(_tname);
 		nrow = 0;
 		ncol = _ncol;
 		tupleLen = strLen * ncol;
 		names = new ArrayList<String>(_names);
 		types = new ArrayList<Integer>(_types);
+		table = new ArrayList<String>(_table);
 		data = new ArrayList<char[]>();
+		//print();
 	}
+	
+	// join empty table constructor
+	Table(String _tname, int _ncol, int _ncol2, 
+			ArrayList<String> _names, ArrayList<Integer> _types, ArrayList<String> _table,
+			ArrayList<String> _names2, ArrayList<Integer> _types2, ArrayList<String> _table2){
+		tname = new String(_tname);
+		nrow = 0;
+		ncol = _ncol+_ncol2;
+		tupleLen = strLen*ncol;
+		names = new ArrayList<String>(_names);
+		names.addAll(new ArrayList<String>(_names2));
+		types = new ArrayList<Integer>(_types);
+		types.addAll(new ArrayList<Integer>(_types2));
+		table = new ArrayList<String>(_table);
+		table.addAll(new ArrayList<String>(_table2));
+		data = new ArrayList<char[]>();
+	
+	}
+	
+	
 	
 	//insert tuple into the data list
 	void insert(char[] tup) {
@@ -101,7 +125,13 @@ public class Table {
 	void print() {
 		
 		System.out.println(tname+" : "+nrow+" by "+ncol);
-		
+
+		if(table!=null) {
+			for(String n:table)
+				System.out.print(n+'\t');
+			System.out.println();
+		}
+
 		if(names!=null) {
 			for(String n:names)
 				System.out.print(n+'\t');

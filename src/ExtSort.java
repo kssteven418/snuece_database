@@ -74,7 +74,7 @@ public class ExtSort {
 				init(input.tupleLen, input.strLen, 1, 0);
 				
 				boolean succ = true;
-				Table newinput = new Table(input.tname, input.ncol, input.names, input.types);
+				Table newinput = new Table(input.tname, input.ncol, input.names, input.types, input.table);
 				for(int i=0; i<input.data.size(); i++) {
 					newinput.insert(input.data.get(i));
 					Table output = run(newinput, false);
@@ -195,7 +195,7 @@ public class ExtSort {
 	}
 	
 	Table run(Table input, int pass) {
-		Table output = new Table(input.tname, input.ncol, input.names, input.types);
+		Table output = new Table(input.tname, input.ncol, input.names, input.types, input.table);
 		
 		//internal sort
 		if(pass==0) {
