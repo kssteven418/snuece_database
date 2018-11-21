@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class Join {
-	int jmode = 0; // join mode, 0 for bnj, 1 for smj, 2 for hj
+	int jmode = 1; // join mode, 0 for bnj, 1 for smj, 2 for hj
 	
 	int bsize; // B : number of buffers
 	int rnum; // number of records per page
@@ -178,15 +178,8 @@ public class Join {
 					for(int j=0; j<inbuf_in_max; j++) {
 						
 						/* TODO : join condition check !! */
-						if(checkJoinCond(inbuf_in[j], inbuf_out[i])) {
-							char[] temp = joinArray(inbuf_out[i], inbuf_in[j]);
-							outbuf[outbuf_pos] = temp;
-							outbuf_pos ++;
-							//if outbuf full, flush
-							if(outbuf_pos==outbuf.length) {
-								flush(outbuf_pos, output);
-								outbuf_pos = 0; // reset
-							}
+						if(checkJoinCond(inbuf_in[j], inbuf_out[i], op)) {
+							outputTuple(inbuf_out[i], inbuf_in[j], output);
 						}
 					}
 				}
@@ -199,7 +192,139 @@ public class Join {
 		return output;
 	}
 	
+	
 	Table sortMergeJoin(Table output) {
+		
+		// initialize external sorting module
+		ExtSort sort = new ExtSort();
+		sort.setBsize(bsize);
+		sort.setRnum(rnum);
+		sort.setTiming(false);
+		sort.setWrite(false);
+		
+		// sort by external sorting module
+		in = sort.run(in, colIn, typeIn, false);
+		out = sort.run(out, colOut, typeOut, false);
+		in.print();
+		out.print();
+		
+		// pointers pointing table addr
+		int out_start = 0;
+		int in_start = 0;
+		int in_finish = 0;
+		
+		//pointers pointing buffer addr
+		int i = 0;
+		int o = 0;
+		
+		out_pos = 0;
+		in_pos = 0;
+		
+		inbuf_out_max = fill(0);
+		inbuf_in_max = fill(1);
+		
+		while(true) {
+						
+			// searching phase
+			if(out_start==out.data.size()) break;
+			if(in_start==in.data.size()) break;
+			
+			// if out of inbuf_in boundary
+			if(i==inbuf_in_max) {
+				i = 0;
+				inbuf_in_max = fill(1);
+			}
+			
+			// if out of inbuf_out boundary
+			if(o==inbuf_out_max) {
+				o = 0;
+				inbuf_out_max = fill(0);
+			}
+			
+			boolean cond = checkJoinCond(inbuf_in[i], inbuf_out[o], '=');
+			
+			// if the keys of the inner table and the outer table match 
+			if(cond) {
+				// 1. proceed in_finish pointer
+				
+				// initialize in_finish pointer
+				in_finish = in_start+1;
+				//System.out.println("infinish"+in_finish);
+				i++;
+				
+				while(true) {
+					if(in_finish==in.data.size()) break; // out of bound
+					
+					// if not on the memory
+					if(i==inbuf_in_max) {
+						i = 0;
+						inbuf_in_max = fill(1);
+					}
+					
+					// check if matching
+					// if matching, proceed in_finish pointer and store the joined tuple
+					if(checkJoinCond(inbuf_in[i], inbuf_out[o], '=')) {
+						// proceed
+						in_finish++;
+						i++;
+						
+						// output the joined tuple
+						outputTuple(inbuf_out[o], inbuf_in[i], output);		
+						
+					}
+					// if not matching, break the loop
+					else {
+						break;
+					}
+				}
+				
+				// 2. Join!
+				out_start++;
+				o++;
+				
+				in_pos = in_start;
+				
+				while(true) {
+					if(out_start==out.data.size()) break; // index out of bound
+					
+					// if out of inbuf_out boundary
+					if(o==inbuf_out_max) {
+						o = 0;
+						inbuf_out_max = fill(0);
+					}
+					
+					
+					if(checkJoinCond(inbuf_in[i], inbuf_out[o], '=')) {
+						
+					}
+					else {
+						break;
+					}
+				}
+				
+				System.out.println("in_start = "+in_start+", in_finish = "+in_finish+", out_start = "+out_start);
+				in_start = in_finish;
+				
+			}
+			
+			else {
+				// in_key < out_key
+				// proceed in pointer
+				if(checkJoinCond(inbuf_in[i], inbuf_out[o], '<')) {
+					in_start++;
+					i++;
+					
+				}
+				// in_key > out_key
+				// proceed out pointer
+				else {
+					out_start++;
+					o++;
+				}
+			}
+			
+		}
+		
 		return null;
 	}
 	
@@ -210,7 +335,8 @@ public class Join {
 	// fill inbuf from the inner or outer table 
 	int fill(int mode) { // 0 if out->inbuf_out, 1 if in->inbuf_in
 		int pos = 0;
-		
+		//in.print();
+		//out.print();
 		while(true) {
 			if(mode==0) {
 				if(out_pos==out.data.size()) {
@@ -239,6 +365,19 @@ public class Join {
 		return pos;
 	}
 	
+	// output tuple to the output buffer
+	// if the buffer is full, then flush
+	void outputTuple(char[] tup_out, char[] tup_in, Table output) {
+		char[] temp = joinArray(tup_out, tup_in);
+		outbuf[outbuf_pos] = temp;
+		outbuf_pos ++;
+		//if outbuf full, flush
+		if(outbuf_pos==outbuf.length) {
+			flush(outbuf_pos, output);
+			outbuf_pos = 0; // reset
+		}
+	}
+	
 	// flush the outbuf into the output table(disk)
 	void flush(int max, Table output) {
 		int pos = 0;
@@ -265,14 +404,15 @@ public class Join {
 		return temp;
 	}
 	
-	boolean checkJoinCond(char[] src_in, char[] src_out) { // data from inner table and outer table, respectively
+	boolean checkJoinCond(char[] src_in, char[] src_out, char op) { // data from inner table and outer table, respectively
 		String str_in = CharStr.getString(src_in, colIndexIn);
 		String str_out = CharStr.getString(src_out, colIndexOut);
-		return checkOperation(str_in, str_out);
+		return checkOperation(str_in, str_out, op);
 	}
 	
 	// result of "inner.attr op outer.attr"
-	boolean checkOperation(String str_in, String str_out) {
+	boolean checkOperation(String str_in, String str_out, char op) {
+		//System.out.println(str_in+" "+str_out);
 		//integer type
 		if(typeIn==0) {
 			int i_in = Integer.parseInt(str_in);
