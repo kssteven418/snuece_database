@@ -347,6 +347,7 @@ public class Handler {
 						int intVal = Integer.parseInt(value);
 						//scan the table
 						for(char[] x:temp.data) {
+							System.out.println(CharStr.getString(x, temp.strLen*attr));
 							int x_val = Integer.parseInt(CharStr.getString(x, temp.strLen*attr));
 							if(compare(x_val, q.operation, intVal)) {
 								// insert the tuple, if meets the condition
@@ -355,7 +356,7 @@ public class Handler {
 						}
 					// parse error if type does not match
 					} catch(Exception e) {
-						System.out.println("Error : Invalid Where Statement, type mismatch");
+						System.out.println("Error : Invalid Where Statement, type mismatch1");
 						return null;
 					}
 				}
@@ -364,7 +365,7 @@ public class Handler {
 					//type does not match if the value does not start with ' or "
 					char startChar = value.charAt(0);
 					if (startChar != '\"' && startChar != '\'') {
-						System.out.println("Error : Invalid Where Statement, type mismatch");
+						System.out.println("Error : Invalid Where Statement, type mismatch2");
 						return null;
 					}
 					// scan the table
@@ -392,7 +393,7 @@ public class Handler {
 				/* integer type */
 				if(type==0) { 
 					if(type2==1) {
-						System.out.println("Error : Invalid Where Statement, type mismatch");
+						System.out.println("Error : Invalid Where Statement, type mismatch3");
 						return null; // type mismatch
 					}
 					//scan the table
@@ -413,7 +414,7 @@ public class Handler {
 				/* string type */
 				else { 
 					if(type2==0) {
-						System.out.println("Error : Invalid Where Statement, type mismatch");
+						System.out.println("Error : Invalid Where Statement, type mismatch4");
 						return null; // type mismatch
 					}
 					//scan the table

@@ -116,6 +116,8 @@ public class Join {
 		
 	}
 	
+	
+	// inner.attr=outer.attr
 	Table run(Table inner, Table outer, int colin, int typein, int colout, int typeout, char op) {
 		in = inner;
 		out = outer;
@@ -176,7 +178,7 @@ public class Join {
 					for(int j=0; j<inbuf_in_max; j++) {
 						
 						/* TODO : join condition check !! */
-						if(true/*join cond*/) {
+						if(checkJoinCond(inbuf_in[j], inbuf_out[i])) {
 							char[] temp = joinArray(inbuf_out[i], inbuf_in[j]);
 							outbuf[outbuf_pos] = temp;
 							outbuf_pos ++;
@@ -193,7 +195,7 @@ public class Join {
 		}
 		flush(outbuf_pos, output); // flush remaining
 		
-		output.print();
+		//output.print();
 		return output;
 	}
 	
@@ -205,6 +207,7 @@ public class Join {
 		return null;
 	}
 	
+	// fill inbuf from the inner or outer table 
 	int fill(int mode) { // 0 if out->inbuf_out, 1 if in->inbuf_in
 		int pos = 0;
 		
@@ -236,6 +239,7 @@ public class Join {
 		return pos;
 	}
 	
+	// flush the outbuf into the output table(disk)
 	void flush(int max, Table output) {
 		int pos = 0;
 		while(true) {
@@ -246,6 +250,7 @@ public class Join {
 		
 	}
 	
+	// join two string into one string
 	char[] joinArray(char[] arr1, char[] arr2) {
 		char[] temp = new char[arr1.length+arr2.length];
 		int k = 0;
@@ -258,5 +263,30 @@ public class Join {
 			k++;
 		}
 		return temp;
+	}
+	
+	boolean checkJoinCond(char[] src_in, char[] src_out) { // data from inner table and outer table, respectively
+		String str_in = CharStr.getString(src_in, colIndexIn);
+		String str_out = CharStr.getString(src_out, colIndexOut);
+		return checkOperation(str_in, str_out);
+	}
+	
+	// result of "inner.attr op outer.attr"
+	boolean checkOperation(String str_in, String str_out) {
+		//integer type
+		if(typeIn==0) {
+			int i_in = Integer.parseInt(str_in);
+			int i_out = Integer.parseInt(str_out);
+			if(op=='=') return i_in==i_out;
+			if(op=='<') return i_in<i_out;
+			if(op=='>') return i_in>i_out;
+		}
+		else {
+			int cmp = str_in.compareTo(str_out);
+			if(op=='=') return cmp==0;
+			if(op=='<') return cmp<0;
+			if(op=='>') return cmp>0;
+		}
+		return false;
 	}
 }
