@@ -42,7 +42,7 @@ public class Join {
 	
 	Join(){
 		bsize = 4;
-		rnum = 3;		
+		rnum = 7;		
 		timing = false;
 	}
 	
@@ -243,13 +243,15 @@ public class Join {
 			
 			boolean cond = checkJoinCond(inbuf_in[i], inbuf_out[o], '=');
 			
-			// if the keys of the inner table and the outer table match 
+			// A. if the keys of the inner table and the outer table match 
 			if(cond) {
-				// 1. proceed in_finish pointer
+				
+				outputTuple(inbuf_out[o], inbuf_in[i], output);	
+				
+				/******** 1. proceed in_finish pointer *********/
 				
 				// initialize in_finish pointer
 				in_finish = in_start+1;
-				//System.out.println("infinish"+in_finish);
 				i++;
 				
 				while(true) {
@@ -264,12 +266,13 @@ public class Join {
 					// check if matching
 					// if matching, proceed in_finish pointer and store the joined tuple
 					if(checkJoinCond(inbuf_in[i], inbuf_out[o], '=')) {
+						
+						// output the joined tuple
+						outputTuple(inbuf_out[o], inbuf_in[i], output);	
+
 						// proceed
 						in_finish++;
 						i++;
-						
-						// output the joined tuple
-						outputTuple(inbuf_out[o], inbuf_in[i], output);		
 						
 					}
 					// if not matching, break the loop
@@ -278,13 +281,19 @@ public class Join {
 					}
 				}
 				
-				// 2. Join!
-				out_start++;
-				o++;
+				//System.out.println(out_start+" "+in_start+" "+in_finish);
 				
-				in_pos = in_start;
+				
+				/********* 2. Join! **********/
+				
+				//scan outer table and join with inner table entries from in_start to in_finish 
+				
 				
 				while(true) {
+					
+					out_start++;
+					o++;
+					
 					if(out_start==out.data.size()) break; // index out of bound
 					
 					// if out of inbuf_out boundary
@@ -293,20 +302,42 @@ public class Join {
 						inbuf_out_max = fill(0);
 					}
 					
+					// initialization
+					in_pos = in_start;
+					i=0;
+					inbuf_in_max = fill(1);
 					
+					// if the keys still match, then must scan inner table
+					// from in_start to in_finish
 					if(checkJoinCond(inbuf_in[i], inbuf_out[o], '=')) {
 						
+						//scan from in_start to in_finish
+						for(int pos=in_start; pos<in_finish; pos++) {
+							// if out of outbuf boundary
+							if(i==inbuf_in_max) {
+								i = 0;
+								inbuf_in_max = fill(1);
+							}
+							outputTuple(inbuf_out[o], inbuf_in[i], output);	
+							i++;
+						}
 					}
+					// if mismatch, then stop scanning outer table
 					else {
 						break;
 					}
 				}
 				
-				System.out.println("in_start = "+in_start+", in_finish = "+in_finish+", out_start = "+out_start);
+				// restart from the in_finish
 				in_start = in_finish;
+				in_pos = in_finish;
+				i = 0;
+				inbuf_in_max = fill(1);
 				
 			}
-			
+
+			// B. if the keys of the inner table and the outer table mismatch 
+			// then, move in_start or out_start, according to key comparison result
 			else {
 				// in_key < out_key
 				// proceed in pointer
@@ -322,10 +353,11 @@ public class Join {
 					o++;
 				}
 			}
-			
 		}
 		
-		return null;
+		flush(outbuf_pos, output); // flush remaining
+		
+		return output;
 	}
 	
 	Table hashJoin(Table output) {
@@ -335,8 +367,7 @@ public class Join {
 	// fill inbuf from the inner or outer table 
 	int fill(int mode) { // 0 if out->inbuf_out, 1 if in->inbuf_in
 		int pos = 0;
-		//in.print();
-		//out.print();
+
 		while(true) {
 			if(mode==0) {
 				if(out_pos==out.data.size()) {
