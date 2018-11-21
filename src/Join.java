@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class Join {
-	int jmode = 1; // join mode, 0 for bnj, 1 for smj, 2 for hj
+	int jmode = 2; // join mode, 0 for bnj, 1 for smj, 2 for hj
 	
 	int bsize; // B : number of buffers
 	int rnum; // number of records per page
@@ -95,9 +95,7 @@ public class Join {
 		colIndexOut = colOut*strLen;
 
 		op = _op;
-//
-//		System.out.println("OUT "+colOut+" "+typeOut+" "+colIndexOut);
-//		System.out.println("IN  "+colIn +" "+typeIn +" "+colIndexIn );
+
 		
 		/* for convenience, let's assume that the absolute size of buffers can be different,
 		 * depending on the tuple size they contain */
@@ -285,10 +283,7 @@ public class Join {
 				
 				
 				/********* 2. Join! **********/
-				
 				//scan outer table and join with inner table entries from in_start to in_finish 
-				
-				
 				while(true) {
 					
 					out_start++;
@@ -344,7 +339,6 @@ public class Join {
 				if(checkJoinCond(inbuf_in[i], inbuf_out[o], '<')) {
 					in_start++;
 					i++;
-					
 				}
 				// in_key > out_key
 				// proceed out pointer
@@ -361,8 +355,19 @@ public class Join {
 	}
 	
 	Table hashJoin(Table output) {
+		
+		HashJoin hashJoin = new HashJoin(this);
+		// partitioning phase
+		
 		return null;
 	}
+	
+	void partitioningPhase() {
+		
+	}
+	
+	
+	/*************************HELPER FUNCTIONS************************/
 	
 	// fill inbuf from the inner or outer table 
 	int fill(int mode) { // 0 if out->inbuf_out, 1 if in->inbuf_in
@@ -459,5 +464,138 @@ public class Join {
 			if(op=='>') return cmp>0;
 		}
 		return false;
+	}
+	
+	
+}
+
+
+class HashJoin{
+	
+	int bsize; // B : number of buffers
+	int rnum; // number of records per page
+	
+	int strLen;
+	int tupleLenIn;
+	int tupleLenOut;
+	
+	int colIn;
+	int typeIn;
+	int colIndexIn;
+	
+	int colOut;
+	int typeOut;
+	int colIndexOut;
+	
+	Table in; // inner table
+	Table out; // outer table
+	
+	char[][][] buffer;
+	char[][] inbuffer;
+	char[][] outbuffer;
+	
+	int pos;
+	int max_pos;
+	
+	HashJoin(Join j) {
+		bsize = j.bsize;
+		rnum = j.rnum;
+		
+		strLen = j.strLen;
+		tupleLenIn = j.tupleLenIn;
+		tupleLenOut = j.tupleLenOut;
+		
+		colIn = j.colIn;
+		typeIn = j.typeIn;
+		colIndexIn = j.colIndexIn;
+		
+		colOut = j.colOut;
+		typeOut = j.typeOut;
+		colIndexOut = j.colIndexOut;
+		
+		in = j.in;
+		out = j.out;
+	}
+	
+	Table run() {
+		
+	}
+	
+	void partitioningPhase() {
+		Table[] in_partition = new Table[bsize-1];
+		Table[] out_partition = new Table[bsize-1];
+		
+		for(int i=0; i<bsize-1; i++) {
+			in_partition[i] = new Table(in.tname+i, in.ncol, in.names, in.types, in.table);
+			out_partition[i] = new Table(out.tname+i, out.ncol, out.names, out.types, out.table);
+		}
+		
+		/*********** partition inner table *************/
+		// use bsize-1 number of buffers(as output buffers) and one inbuffer
+		inbuffer = new char[rnum][tupleLenIn];
+		buffer = new char[bsize-1][rnum][tupleLenIn];
+		
+		//indexing for buffers and outbuffer
+		int[] index_buffer = new int[bsize-1];
+		for(int i=0; i<bsize-1; i++) index_buffer[i] = 0;
+		int index_outbuffer = 0;
+		
+		max_pos = fill(in, inbuffer);
+		while(true) {
+			// renew inbuffer
+			if(index_outbuffer==max_pos) {
+				if(pos==in.data.size()) break; // inner table all done
+				max_pos = fill(in, inbuffer);
+			}
+			
+		}
+		
+		/*********** partition outer table *************/
+		// use bsize-1 number of buffers(as output buffers) and one inbuffer
+		inbuffer = new char[rnum][tupleLenOut];
+		buffer = new char[bsize-1][rnum][tupleLenOut];
+		
+		//indexing for buffers and outbuffer
+		for(int i=0; i<bsize-1; i++) index_buffer[i] = 0;
+		index_outbuffer = 0;
+		
+	}
+	
+	int hash(String str, int n, int size) {
+		String s = new String(str);
+		for(int i=0; i<n; i++) {
+			int h = Math.abs(s.hashCode());
+			s = s+Integer.toString(h);
+		}
+		return Math.abs(s.hashCode())%size;
+	}
+	
+	int add(char[][] buffer, char[] str, int index) {
+		buffer[index] = str;
+		return index+1;
+	}
+	
+	int flush(char[][] src, int index, Table dest){
+		for(int i=0; i<index; i++) {
+			dest.insert(src[i]);
+		}
+		return 0;	
+	}
+	
+	int fill(Table src, char[][] dest) {
+		int i = 0;
+		while(true) {
+			
+			if(pos==src.data.size()) {
+				break;
+			}
+			if(i==dest.length) {
+				break;
+			}
+			System.arraycopy(src.data.get(pos), 0, dest[i], 0, src.tupleLen);
+			pos++;
+			i++;
+		}
+		return i;
 	}
 }
