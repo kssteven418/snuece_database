@@ -41,8 +41,8 @@ public class Join {
 	int outbuf_pos = 0;
 	
 	Join(){
-		bsize = 4;
-		rnum = 7;		
+		bsize = 3;
+		rnum = 2;		
 		timing = false;
 	}
 	
@@ -357,14 +357,11 @@ public class Join {
 	Table hashJoin(Table output) {
 		
 		HashJoin hashJoin = new HashJoin(this);
-		// partitioning phase
+		hashJoin.run();
 		
 		return null;
 	}
 	
-	void partitioningPhase() {
-		
-	}
 	
 	
 	/*************************HELPER FUNCTIONS************************/
@@ -518,10 +515,28 @@ class HashJoin{
 	}
 	
 	Table run() {
-		
+		partitioningPhase();
+		return null;
+	}
+	
+	void printchararrarr(char[][] arr) {
+		for (int i=0; i<arr.length; i++) {
+			for (int j=0; j<arr[i].length; j++) {
+				if(arr[i][j]>='0' && arr[i][j]<='9')
+					System.out.print(arr[i][j]);
+				else
+					System.out.print(" ");
+			}
+			System.out.println();
+		}
+
+		System.out.println();
 	}
 	
 	void partitioningPhase() {
+		System.out.println(1);
+		
+		// disk space to hold output partitions as Tables
 		Table[] in_partition = new Table[bsize-1];
 		Table[] out_partition = new Table[bsize-1];
 		
@@ -532,22 +547,56 @@ class HashJoin{
 		
 		/*********** partition inner table *************/
 		// use bsize-1 number of buffers(as output buffers) and one inbuffer
-		inbuffer = new char[rnum][tupleLenIn];
-		buffer = new char[bsize-1][rnum][tupleLenIn];
+		inbuffer = new char[rnum][tupleLenIn]; // one input buffer
+		buffer = new char[bsize-1][rnum][tupleLenIn]; // bsize-1 output buffers
 		
-		//indexing for buffers and outbuffer
+		//indexing for buffers and inbuffer
 		int[] index_buffer = new int[bsize-1];
 		for(int i=0; i<bsize-1; i++) index_buffer[i] = 0;
-		int index_outbuffer = 0;
+		int index_inbuffer = 0;
 		
+		pos = 0;
 		max_pos = fill(in, inbuffer);
+
 		while(true) {
+
 			// renew inbuffer
-			if(index_outbuffer==max_pos) {
-				if(pos==in.data.size()) break; // inner table all done
+			if(index_inbuffer==max_pos) {
+				if(pos==in.data.size()) {
+					break; // inner table all done
+				}
 				max_pos = fill(in, inbuffer);
+				index_inbuffer = 0;
 			}
 			
+			String target = CharStr.getString(inbuffer[index_inbuffer], colIndexIn);
+			int h = hash(target, 0, bsize-1);
+			
+			
+			//put into hth buffer
+			index_buffer[h] = add(buffer[h], inbuffer[index_inbuffer], index_buffer[h]);
+			
+			// if the hth buffer is full, then flush into the hth disk Table
+			if(index_buffer[h]==buffer[h].length) {
+				
+				index_buffer[h] = flush(buffer[h], index_buffer[h], in_partition[h]);
+				System.out.println("TABLE Aft flush "+h);
+				printchararrarr(buffer[h]);
+			}
+			
+			index_inbuffer++;
+			
+			
+		}
+		
+		//flush remaining
+		for(int i=0; i<bsize-1; i++) {
+			 flush(buffer[i], index_buffer[i], in_partition[i]);
+		}
+		
+		for(int i=0; i<bsize-1; i++) {
+			System.out.println("In Partition "+i);
+			in_partition[i].print();
 		}
 		
 		/*********** partition outer table *************/
@@ -557,7 +606,7 @@ class HashJoin{
 		
 		//indexing for buffers and outbuffer
 		for(int i=0; i<bsize-1; i++) index_buffer[i] = 0;
-		index_outbuffer = 0;
+		index_inbuffer = 0;
 		
 	}
 	
@@ -571,12 +620,15 @@ class HashJoin{
 	}
 	
 	int add(char[][] buffer, char[] str, int index) {
-		buffer[index] = str;
+		buffer[index] = new char[str.length];
+		for(int i=0; i<str.length; i++)
+			buffer[index][i] = str[i];
 		return index+1;
 	}
 	
 	int flush(char[][] src, int index, Table dest){
 		for(int i=0; i<index; i++) {
+			
 			dest.insert(src[i]);
 		}
 		return 0;	
@@ -599,3 +651,4 @@ class HashJoin{
 		return i;
 	}
 }
+ // fill에서 문제 생성
