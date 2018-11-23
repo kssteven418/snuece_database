@@ -108,21 +108,15 @@ public class Handler {
 		
 		// join if the from statement has two tables
 		if(num_froms == 2) {
-			
-			// must have join statement
-			if(joinList==null) {
-				System.out.println("Error : no join statement for "
-									+fromList.get(0).ta.table+" and "+fromList.get(1).ta.table);
-				return -1;
-			}
-			
-			temp = handleJoin();
+				temp = handleJoin();
 		}
 		
 		// do not join if the from statement has two tables
 		else {
 			temp = tables.get(findTable(fromList.get(0).ta.table));
 		}
+		
+		if(temp==null) return -1;
 		
 		
 		//3rd, handle OrderBy statement
@@ -252,6 +246,26 @@ public class Handler {
 	}
 	
 	Table handleJoin() {
+		
+		// if join list is empty, then cross product
+		if(joinList==null) {
+			String t1name = fromList.get(0).ta.table;
+			String t2name = fromList.get(1).ta.table;
+			int table_index = findTable(t1name);
+			if(table_index<0) {
+				System.out.println("Error : Invalid Join Statement, Not a valid table name");
+				return null;
+			}
+			int table_index2 = findTable(t2name);
+			if(table_index2<0) {
+				System.out.println("Error : Invalid Join Statement, Not a valid table name");
+				return null;
+			}
+			
+			
+			Table output = join.runCrossProd(tables.get(table_index), tables.get(table_index2));
+			return output;
+		}
 		
 		Query q = joinList.get(0);
 		String table = q.ta.table;

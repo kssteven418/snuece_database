@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class Join {
-	int jmode = 2; // join mode, 0 for bnj, 1 for smj, 2 for hj
+	int jmode = 0; // join mode, 0 for bnj, 1 for smj, 2 for hj
 	
 	int bsize; // B : number of buffers
 	int rnum; // number of records per page
@@ -40,9 +40,11 @@ public class Join {
 	//position in outbuf
 	int outbuf_pos = 0;
 	
+	boolean cp = false; // cross_product?
+	
 	Join(){
-		bsize = 100;
-		rnum = 6;		
+		bsize = 4;
+		rnum = 2;		
 		timing = false;
 	}
 	
@@ -78,7 +80,7 @@ public class Join {
 	}
 	
 	
-	void init(int tlout, int tlin, int sl, int colin, int typein, int colout, int typeout, char _op) {
+	void init(int tlout, int tlin, int sl, int colin, int typein, int colout, int typeout, char _op, boolean _cp) {
 		/* initiate the buffer size */
 		/* # buffer = bsize, records per buffer = rnum, record length = tupleLen */
 		tupleLenIn = tlin;
@@ -95,7 +97,7 @@ public class Join {
 		colIndexOut = colOut*strLen;
 
 		op = _op;
-
+		cp = _cp;
 		
 		/* for convenience, let's assume that the absolute size of buffers can be different,
 		 * depending on the tuple size they contain */
@@ -114,13 +116,39 @@ public class Join {
 		
 	}
 	
+	// for cross product
+	Table runCrossProd(Table inner, Table outer) {
+		
+		in = inner;
+		out = outer;
+		
+		if(jmode!=0) {
+			System.out.println("Error : Cross Product is only suported in Block Nested Join mode");
+			return null;
+		}
+		
+		init(outer.tupleLen, inner.tupleLen, inner.strLen, 0, 0, 0, 0, '=', true);
+		
+		Table output = new Table(outer.tname+inner.tname, outer.ncol, inner.ncol,
+				outer.names, outer.types, outer.table,
+				inner.names, inner.types, inner.table);
+		
+		long start = System.currentTimeMillis(); // start time
+		output = blockNestedJoin(output);
+		long end = System.currentTimeMillis();
+		
+		if(timing) {
+			System.out.println( "Sorting Time: " + ( end - start )/1000.0 );
+		}
+		return output;
+	}
 	
 	// inner.attr=outer.attr
 	Table run(Table inner, Table outer, int colin, int typein, int colout, int typeout, char op) {
 		in = inner;
 		out = outer;
 		
-		init(outer.tupleLen, inner.tupleLen, inner.strLen, colin, typein, colout, typeout, op);
+		init(outer.tupleLen, inner.tupleLen, inner.strLen, colin, typein, colout, typeout, op, false);
 		// check for join-ability
 		// must have same types
 		if(typeIn!=typeOut) {
@@ -139,6 +167,7 @@ public class Join {
 				outer.names, outer.types, outer.table,
 				inner.names, inner.types, inner.table);
 
+		long start = System.currentTimeMillis(); // start time
 		
 		if(jmode==0) {
 			output = blockNestedJoin(output);
@@ -154,11 +183,18 @@ public class Join {
 			output = null;
 		}
 		
+		long end = System.currentTimeMillis();
+		
+		if(timing) {
+			System.out.println( "Sorting Time: " + ( end - start )/1000.0 );
+		}
+		
 		return output;
 	}
 	
 	Table blockNestedJoin(Table output) {
-
+		
+		
 		// scan outer table
 		out_pos = 0;
 		while(true) {
@@ -175,10 +211,11 @@ public class Join {
 				for (int i=0; i<inbuf_out_max; i++) {
 					for(int j=0; j<inbuf_in_max; j++) {
 						
-						/* TODO : join condition check !! */
-						if(checkJoinCond(inbuf_in[j], inbuf_out[i], op)) {
-							outputTuple(inbuf_out[i], inbuf_in[j], output);
-						}
+						
+						if(cp || checkJoinCond(inbuf_in[j], inbuf_out[i], op)) { // if cp, then always output tuple
+								outputTuple(inbuf_out[i], inbuf_in[j], output);
+						}	
+						
 					}
 				}
 				
@@ -203,8 +240,8 @@ public class Join {
 		// sort by external sorting module
 		in = sort.run(in, colIn, typeIn, false);
 		out = sort.run(out, colOut, typeOut, false);
-		in.print();
-		out.print();
+		//in.print();
+		//out.print();
 		
 		// pointers pointing table addr
 		int out_start = 0;

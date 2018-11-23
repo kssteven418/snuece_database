@@ -34,9 +34,11 @@ public class SQLparser
 	Table S = new Table("src/S.txt", "S");
 	Table R = new Table("src/R.txt", "R");
 	Table B = new Table("src/B.txt", "B");
+	Table T1 = new Table("src/T1.txt", "T1");
+	Table T2 = new Table("src/T2.txt", "T2");
 
-	//tables.add(Y);
-	//tables.add(Z);
+	tables.add(T1);
+	tables.add(T2);
 	tables.add(S);
 	tables.add(R);
 	tables.add(B);
