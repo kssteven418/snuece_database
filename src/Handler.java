@@ -347,7 +347,6 @@ public class Handler {
 						int intVal = Integer.parseInt(value);
 						//scan the table
 						for(char[] x:temp.data) {
-							System.out.println(CharStr.getString(x, temp.strLen*attr));
 							int x_val = Integer.parseInt(CharStr.getString(x, temp.strLen*attr));
 							if(compare(x_val, q.operation, intVal)) {
 								// insert the tuple, if meets the condition
