@@ -3,8 +3,8 @@ import random
 
 li = []
 
-for i in range(300):
-	for j in range(i):
+for i in range(1000):
+	for j in range(i%5):
 		li.append(i)
 
 
