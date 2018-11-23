@@ -41,7 +41,7 @@ public class Join {
 	int outbuf_pos = 0;
 	
 	Join(){
-		bsize = 3;
+		bsize = 100;
 		rnum = 6;		
 		timing = false;
 	}
@@ -357,9 +357,8 @@ public class Join {
 	Table hashJoin(Table output) {
 		
 		HashJoin hashJoin = new HashJoin(this);
-		hashJoin.run();
+		return hashJoin.run();
 		
-		return null;
 	}
 	
 	
@@ -535,14 +534,20 @@ class HashJoin{
 			joiningPhase(in_partition[i], out_partition[i], 1, joined);
 		}
 		
+//		joined.print();
 		
-		
-		return null;
+		return joined;
 	}
 
 	
 	// returns [in_partition, out_partition]
 	Table[][] partitioningPhase(Table in, Table out, int n) {
+		
+		if(n>200) {
+			System.out.println("Error : Hash Join is not Stopping...");
+			char[] x = null;
+			x[0]++; // cause exception to stop the program
+		}
 		
 		// disk space to hold output partitions as Tables
 		Table[] in_partition = new Table[bsize-1];
@@ -649,24 +654,29 @@ class HashJoin{
 		return_partition[0] = in_partition;
 		return_partition[1] = out_partition;
 		
-		System.out.println("--------------------------------");
-		System.out.println("RUN "+n);
-		for(int i=0; i<bsize-1; i++) {
-			System.out.println("In Partition "+i);
-			in_partition[i].print();
-		}
-	
-		for(int i=0; i<bsize-1; i++) {
-			System.out.println("Out Partition "+i);
-			out_partition[i].print();	
-		}
-		System.out.println("--------------------------------");
+//		System.out.println("--------------------------------");
+//		System.out.println("RUN "+n);
+//		for(int i=0; i<bsize-1; i++) {
+//			System.out.println("In Partition "+i);
+//			in_partition[i].print();
+//		}
+//	
+//		for(int i=0; i<bsize-1; i++) {
+//			System.out.println("Out Partition "+i);
+//			out_partition[i].print();	
+//		}
+//		System.out.println("--------------------------------");
 		
 		return return_partition;
 	}
 
 	
 	void joiningPhase(Table in_partition, Table out_partition, int n, Table joined) {
+		
+		if(joined==null) {
+			return;
+		}
+		
 		// n : depth of the recursion -> for hash function
 
 		// out_partition is distributed to bsize-2 number of main buffers
@@ -684,7 +694,7 @@ class HashJoin{
 		
 		// 1. Try partitioning
 		
-		boolean succeed = false;
+		boolean succeed = false; // is partitioning succeeded?
 		
 		int[] index_buffer = new int[bsize-2];
 		for(int i=0; i<bsize-2; i++) index_buffer[i] = 0;
@@ -706,7 +716,6 @@ class HashJoin{
 			String target = CharStr.getString(inbuffer[index_inbuffer], colIndexOut);
 			int h = hash(target, n, bsize-2);
 			
-			
 			if(index_buffer[h]==buffer[h].length) {
 				succeed = false;
 				break;
@@ -717,16 +726,54 @@ class HashJoin{
 			
 			// if the hth buffer is full, then partitioning failed
 			
-			
 			index_inbuffer++;
 			
 		}
+		
+		
+		// 2. if partition succeeded,
+		// then use inbuffer to scan the in_partition and join with the outer_partition
 		if(succeed) {
 			
+			int index_outbuffer = 0;
+			
+			inbuffer = new char[rnum][tupleLenIn];
+			
+			index_inbuffer = 0;
+			pos = 0;
+			max_pos = fill(in_partition, inbuffer);
+			
+			while(true) {
+				if(index_inbuffer==max_pos) {
+					if(pos==in_partition.data.size()) {
+						break; // all done
+					}
+
+					max_pos = fill(in_partition, inbuffer);
+					index_inbuffer = 0;
+				}
+			
+			String target = CharStr.getString(inbuffer[index_inbuffer], colIndexIn);
+			int h = hash(target, n, bsize-2);
+			
+			index_outbuffer = searchAndJoin(inbuffer[index_inbuffer], buffer[h],
+									index_buffer[h], outbuffer, index_outbuffer, joined);
+			
+			index_inbuffer++;
+			
+			}
+			
+			flush(outbuffer, index_outbuffer, joined); // flush remaining
 		}
+		
+		// 3. if partition failed,
+		// recursion!!
 		else {
 			// recursively partition the partitions
 			Table[][] partitions = partitioningPhase(in_partition, out_partition, n);
+			
+			// if partitioning error : this is caused by non-stopping recursion
+						
 			Table[] in_partition_rec = partitions[0];
 			Table[] out_partition_rec = partitions[1];
 			

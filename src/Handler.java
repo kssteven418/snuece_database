@@ -81,11 +81,11 @@ public class Handler {
 		if(checkValue<0) return -1; // parsing error
 		
 		
-		if(selectList != null) selectList.print();
-		if(fromList != null) fromList.print();
-		if(whereList != null) whereList.print();
-		if(joinList != null) joinList.print();
-		if(orderbyList != null) orderbyList.print();
+//		if(selectList != null) selectList.print();
+//		if(fromList != null) fromList.print();
+//		if(whereList != null) whereList.print();
+//		if(joinList != null) joinList.print();
+//		if(orderbyList != null) orderbyList.print();
 
 		//2nd, check the from statement
 		//for project 2, only one table is possible in the from statement
